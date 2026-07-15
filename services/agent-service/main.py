@@ -11,6 +11,7 @@ from typing import Any
 
 import httpx
 from fastapi import FastAPI, Header
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from dify_client import DifyChatClient, DifyClientConfig, DifyClientError
@@ -31,11 +32,20 @@ from repository import (
 )
 from security import access_preview
 from state_machine import transition_preview
+from console_api import router as console_router
 
 
 DB_SIMULATOR_URL = os.getenv("DB_SIMULATOR_URL", "http://db-simulator:8000")
 
 app = FastAPI(title="agent-service", version="0.2.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4173"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "X-Trace-Id", "X-Idempotency-Key"],
+)
+app.include_router(console_router)
 
 
 class MaskingPreviewRequest(BaseModel):
