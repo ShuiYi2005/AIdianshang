@@ -18,6 +18,11 @@ __pycache__/
 # Git worktrees
 .worktrees/
 services/agent-service/training-assets/
+services/support-console/node_modules/
+services/support-console/dist/
+services/support-console/*.tsbuildinfo
+services/support-console/vite.config.js
+services/support-console/vite.config.d.ts
 
 # OS/editor
 .DS_Store
