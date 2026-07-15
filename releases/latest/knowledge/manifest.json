@@ -1,0 +1,17 @@
+{
+  "version": "2026-07-03-local",
+  "documents": [
+    {
+      "source_uri": "support/faq.md",
+      "document_type": "faq",
+      "owner_domain": "support",
+      "status": "published"
+    },
+    {
+      "source_uri": "support/after-sales-policy.md",
+      "document_type": "policy",
+      "owner_domain": "support",
+      "status": "published"
+    }
+  ]
+}

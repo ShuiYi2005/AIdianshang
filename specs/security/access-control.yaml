@@ -1,0 +1,22 @@
+name: access-control
+status: foundation-designed
+type: security-policy
+model:
+  authorization: rbac_plus_data_policy
+  tenant_isolation: tenant_id
+tables:
+  roles: core.roles
+  permissions: core.permissions
+  role_permissions: core.role_permissions
+  user_roles: core.user_roles
+  data_access_policies: core.data_access_policies
+critical_permissions:
+  - orders.read
+  - resumes.read
+  - refunds.handle
+  - audit.read
+  - pii.read_full
+rules:
+  high_risk_permissions_require_explicit_grant: true
+  ai_default_access_is_masked: true
+  audit_read_does_not_imply_full_pii: true

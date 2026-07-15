@@ -1,0 +1,23 @@
+name: crm-adapter
+status: target-design
+type: external-platform-adapter
+purpose: integrate customer profiles, tickets, and human handoff with CRM systems
+contracts:
+  outputs:
+    - CustomerProfile
+    - Ticket
+    - HandoffTask
+    - AgentUser
+    - Conversation
+responsibilities:
+  - get_customer_profile
+  - create_ticket
+  - update_ticket_status
+  - create_handoff_task
+  - sync_human_reply
+  - sync_customer_tags
+rules:
+  customer_identity_mapping_required: true
+  handoff_context_snapshot_required: true
+  writes_require_audit_log: true
+  sensitive_fields_must_be_masked: true

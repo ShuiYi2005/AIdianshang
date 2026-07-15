@@ -1,0 +1,24 @@
+name: tool-resilience
+status: foundation-designed
+type: tool-policy
+tables:
+  fallback: ops.tool_fallback_policies
+  invocation: ops.tool_invocation_policies
+tool_categories:
+  query:
+    auto_call_allowed: true
+  create:
+    idempotency_required: true
+  update:
+    permission_required: true
+  high_risk:
+    human_approval_required: true
+fallback_actions:
+  - use_cache
+  - handoff
+  - apology
+  - retry_later
+rules:
+  every_tool_requires_timeout: true
+  every_write_tool_requires_idempotency: true
+  every_tool_call_requires_audit: true

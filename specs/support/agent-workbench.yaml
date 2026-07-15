@@ -1,0 +1,19 @@
+name: agent-workbench
+status: backend-foundation-designed
+type: support-console
+backend_tables:
+  handoff_queue: support.handoff_queue
+  sessions: support.agent_workbench_sessions
+  tickets: support.tickets
+  conversations: support.conversations
+  context: memory.context_snapshots
+views_needed:
+  - queue
+  - conversation_detail
+  - customer_profile
+  - context_summary
+  - ticket_actions
+  - audit_timeline
+rules:
+  sensitive_fields_follow_role_masking: true
+  handoff_requires_context_snapshot: true

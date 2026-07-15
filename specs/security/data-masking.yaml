@@ -1,0 +1,23 @@
+name: data-masking
+status: foundation-designed
+type: security-policy
+table: core.data_masking_policies
+resources:
+  phone:
+    default_strategy: partial
+    full_access_permission: pii.read_full
+  address:
+    default_strategy: partial
+    full_access_permission: pii.read_full
+  resume:
+    default_strategy: redact
+    full_access_permission: resumes.read
+  chat_message:
+    default_strategy: partial
+    full_access_permission: audit.read
+  api_response:
+    default_strategy: redact
+    full_access_permission: pii.read_full
+rules:
+  no_raw_pii_in_prompt_by_default: true
+  tool_response_must_be_masked_by_role: true

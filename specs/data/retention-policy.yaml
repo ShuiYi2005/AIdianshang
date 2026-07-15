@@ -1,0 +1,15 @@
+name: data-retention
+status: foundation-designed
+type: data-policy
+tables:
+  policies: ops.data_retention_policies
+  jobs: ops.retention_jobs
+defaults:
+  redis_short_term_memory: 30m_to_7d
+  tool_cache: 5m_to_1h
+  context_snapshots: 30d_to_180d
+  conversations: 180d_to_2y
+  audit_logs: 1y_to_5y
+rules:
+  retention_policy_must_be_explicit: true
+  pii_archival_requires_masking_or_encryption: true

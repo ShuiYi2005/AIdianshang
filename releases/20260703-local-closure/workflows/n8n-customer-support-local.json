@@ -1,0 +1,84 @@
+{
+  "name": "AI20 Local Customer Support",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "ai20/customer-support",
+        "httpMethod": "POST",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-local-customer-support",
+      "name": "Customer Message Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://agent-service:8010/api/agent/reply",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Trace-Id",
+              "value": "={{$json.trace_id || $execution.id}}"
+            },
+            {
+              "name": "X-Idempotency-Key",
+              "value": "={{$json.idempotency_key || $execution.id}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"conversation_id\": $json.conversation_id || \"n8n-local-conversation\", \"platform\": $json.platform || \"n8n-local\", \"customer_id\": $json.customer_id || \"n8n-local-customer\", \"user_message\": $json.user_message || $json.message || \"\", \"role\": $json.role || \"support_agent\"}"
+      },
+      "id": "call-agent-service",
+      "name": "Call Agent Service",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}"
+      },
+      "id": "respond-to-channel",
+      "name": "Respond To Channel",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [800, 300]
+    }
+  ],
+  "connections": {
+    "Customer Message Webhook": {
+      "main": [
+        [
+          {
+            "node": "Call Agent Service",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Agent Service": {
+      "main": [
+        [
+          {
+            "node": "Respond To Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "local-productization-closure"
+}

@@ -1,0 +1,26 @@
+handoff_rules:
+  - id: refund_dispute
+    description: 退款争议、赔付、平台投诉相关问题转人工
+    triggers:
+      intents:
+        - refund_dispute
+        - compensation
+        - platform_complaint
+    action: human_handoff
+
+  - id: negative_emotion
+    description: 用户强烈不满或威胁差评时转人工
+    triggers:
+      keywords:
+        - 投诉
+        - 差评
+        - 赔偿
+        - 欺骗
+        - 骗人
+    action: human_handoff
+
+  - id: repeated_unsatisfied
+    description: 用户连续两次表达不满意时转人工
+    triggers:
+      unsatisfied_count_gte: 2
+    action: human_handoff

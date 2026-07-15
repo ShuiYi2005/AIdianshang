@@ -1,0 +1,22 @@
+{
+  "version": "2026.07.03-local",
+  "createdAt": "2026-07-03T00:00:00+08:00",
+  "composeFiles": [
+    "deployment/docker-compose.yml",
+    "deployment/docker-compose.release.yml"
+  ],
+  "envExample": "deployment/env/release.env.example",
+  "requiredPorts": [5001, 5003, 5004, 5678, 8001, 8010, 8080, 5433],
+  "images": [
+    {"name": "postgres:15-alpine", "archive": "images/postgres_15-alpine.tar"},
+    {"name": "postgres:16-alpine", "archive": "images/postgres_16-alpine.tar"},
+    {"name": "redis:7-alpine", "archive": "images/redis_7-alpine.tar"},
+    {"name": "semitechnologies/weaviate:1.28.5", "archive": "images/semitechnologies_weaviate_1.28.5.tar"},
+    {"name": "langgenius/dify-api:1.14.2", "archive": "images/langgenius_dify-api_1.14.2.tar"},
+    {"name": "langgenius/dify-web:1.14.2", "archive": "images/langgenius_dify-web_1.14.2.tar"},
+    {"name": "langgenius/dify-plugin-daemon:0.6.1-local", "archive": "images/langgenius_dify-plugin-daemon_0.6.1-local.tar"},
+    {"name": "n8nio/n8n:latest", "archive": "images/n8nio_n8n_latest.tar"},
+    {"name": "ai20-db-simulator:latest", "archive": "images/ai20-db-simulator_latest.tar"},
+    {"name": "ai20-agent-service:latest", "archive": "images/ai20-agent-service_latest.tar"}
+  ]
+}

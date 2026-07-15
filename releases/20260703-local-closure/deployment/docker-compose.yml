@@ -1,0 +1,299 @@
+﻿name: ai20
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  business_postgres_data:
+  redis_data:
+  weaviate_data:
+  n8n_data:
+
+services:
+
+  db:
+    image: postgres:15-alpine
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: dify
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  business-db:
+    image: postgres:16-alpine
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - business_postgres_data:/var/lib/postgresql/data
+      - ./business-db/init:/docker-entrypoint-initdb.d:ro
+    environment:
+      POSTGRES_USER: ${BUSINESS_DB_USER}
+      POSTGRES_PASSWORD: ${BUSINESS_DB_PASSWORD}
+      POSTGRES_DB: ${BUSINESS_DB_NAME}
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${BUSINESS_DB_USER} -d ${BUSINESS_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  weaviate:
+    image: semitechnologies/weaviate:1.28.5
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    environment:
+      CLUSTER_HOSTNAME: node1
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      DEFAULT_VECTORIZER_MODULE: "none"
+
+  dify-api:
+    image: langgenius/dify-api:1.14.2
+    pull_policy: never
+    restart: always
+    networks:
+      - app-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      weaviate:
+        condition: service_started
+    environment:
+      MODE: api
+      HOME: /tmp
+      EDITION: SELF_HOSTED
+      SECRET_KEY: ${DIFY_SECRET_KEY}
+      INIT_PASSWORD: ${DIFY_INIT_PASSWORD}
+      LOG_LEVEL: INFO
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: dify
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      WEAVIATE_HOST: weaviate
+      WEAVIATE_PORT: 8080
+      WEAVIATE_SCHEME: http
+      VECTOR_STORE: weaviate
+      VECTOR_STORE_TYPE: weaviate
+      CONSOLE_CORS_ALLOW_ORIGINS: "*"
+      WEB_API_CORS_ALLOW_ORIGINS: "*"
+      OPENDAL_SCHEME: fs
+      OPENDAL_FS_ROOT: /app/api/storage
+      CELERY_BROKER_URL: redis://redis:6379/1
+    volumes:
+      - ../dify/storage:/app/api/storage
+    ports:
+      - "5001:5001"
+  dify-worker:
+    image: langgenius/dify-api:1.14.2
+    pull_policy: never
+    restart: always
+    networks:
+      - app-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      weaviate:
+        condition: service_started
+    environment:
+      MODE: worker
+      HOME: /tmp
+      EDITION: SELF_HOSTED
+      SECRET_KEY: ${DIFY_SECRET_KEY}
+      INIT_PASSWORD: ${DIFY_INIT_PASSWORD}
+      LOG_LEVEL: INFO
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: dify
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      WEAVIATE_HOST: weaviate
+      WEAVIATE_PORT: 8080
+      WEAVIATE_SCHEME: http
+      VECTOR_STORE: weaviate
+      VECTOR_STORE_TYPE: weaviate
+      OPENDAL_SCHEME: fs
+      OPENDAL_FS_ROOT: /app/api/storage
+      CELERY_BROKER_URL: redis://redis:6379/1
+    volumes:
+      - ../dify/storage:/app/api/storage
+
+  dify-web:
+    image: langgenius/dify-web:1.14.2
+    pull_policy: never
+    restart: always
+    networks:
+      - app-network
+    depends_on:
+      - dify-api
+    environment:
+      CONSOLE_API_URL: http://localhost:5001
+      APP_API_URL: http://localhost:5001
+      CONSOLE_CORS_ALLOW_ORIGINS: "*"
+      APP_CORS_ALLOW_ORIGINS: "*"
+    ports:
+      - "8080:3000"
+
+  n8n:
+    image: n8nio/n8n:latest
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - n8n_data:/home/node/.n8n
+    environment:
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      WEBHOOK_URL: http://localhost:5678
+      N8N_PROTOCOL: http
+    ports:
+      - "5678:5678"
+
+
+  plugin-daemon:
+    image: langgenius/dify-plugin-daemon:0.6.1-local
+    pull_policy: never
+    restart: always
+    networks:
+      - app-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      dify-api:
+        condition: service_started
+    environment:
+      SERVER_KEY: ${PLUGIN_SERVER_KEY}
+      DIFY_INNER_API_URL: http://dify-api:5001
+      DIFY_INNER_API_KEY: ${DIFY_INNER_API_KEY}
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: db
+      DB_PORT: '5432'
+      DB_DATABASE: dify
+      REDIS_HOST: redis
+      REDIS_PORT: '6379'
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      PLUGIN_REMOTE_INSTALLING_HOST: 0.0.0.0
+      PLUGIN_REMOTE_INSTALLING_PORT: '5004'
+      PLUGIN_WORKING_PATH: /app/plugins
+      DAEMON_PORT: '5003'
+    ports:
+      - '5003:5003'
+      - '5004:5004'
+
+  db-simulator:
+    build:
+      context: ../services/db-simulator
+      dockerfile: Dockerfile
+      args:
+        BASE_IMAGE: ${DB_SIMULATOR_BASE_IMAGE:-python:3.12-slim}
+    image: ai20-db-simulator:latest
+    pull_policy: never
+    restart: always
+    networks:
+      - app-network
+    depends_on:
+      business-db:
+        condition: service_healthy
+    environment:
+      BUSINESS_DATABASE_URL: postgresql://${BUSINESS_DB_USER}:${BUSINESS_DB_PASSWORD}@business-db:5432/${BUSINESS_DB_NAME}
+    ports:
+      - "8001:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  agent-service:
+    build:
+      context: ../services/agent-service
+      dockerfile: Dockerfile
+      args:
+        BASE_IMAGE: ${AGENT_SERVICE_BASE_IMAGE:-python:3.12-slim}
+    image: ai20-agent-service:latest
+    pull_policy: never
+    restart: always
+    networks:
+      - app-network
+    depends_on:
+      business-db:
+        condition: service_healthy
+      db-simulator:
+        condition: service_healthy
+    environment:
+      BUSINESS_DATABASE_URL: postgresql://${BUSINESS_DB_USER}:${BUSINESS_DB_PASSWORD}@business-db:5432/${BUSINESS_DB_NAME}
+      DB_SIMULATOR_URL: http://db-simulator:8000
+    volumes:
+      - ../knowledge:/app/knowledge:ro
+    ports:
+      - "8010:8010"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/health', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

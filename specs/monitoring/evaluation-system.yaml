@@ -1,0 +1,39 @@
+name: monitoring-and-evaluation
+status: target-design
+type: observability-and-ai-quality
+monitoring_metrics:
+  - request_count
+  - error_rate
+  - p50_latency_ms
+  - p95_latency_ms
+  - p99_latency_ms
+  - tool_timeout_rate
+  - rag_hit_rate
+  - handoff_rate
+  - cache_hit_rate
+  - model_cost
+evaluation_metrics:
+  - no_fabrication
+  - tool_call_correctness
+  - rag_grounding_correctness
+  - handoff_policy_correctness
+  - pii_leakage
+  - tone_compliance
+  - answer_completeness
+data_sources:
+  - audit.tool_call_logs
+  - audit.ai_response_logs
+  - memory.context_snapshots
+  - support.message_feedback
+  - support.handoff_queue
+  - audit.metrics_events
+  - audit.cost_usage_events
+  - audit.alert_events
+  - knowledge.evaluation_sets
+  - knowledge.evaluation_cases
+  - knowledge.evaluation_runs
+  - knowledge.evaluation_results
+rules:
+  prompt_changes_require_eval: true
+  knowledge_changes_require_eval: true
+  workflow_changes_require_smoke_test: true

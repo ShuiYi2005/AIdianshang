@@ -1,0 +1,17 @@
+name: multi-tenant-isolation
+status: foundation-designed
+type: tenancy-policy
+tenant_table: core.tenants
+required_column: tenant_id
+covered_domains:
+  - core
+  - commerce
+  - recruitment
+  - support
+  - memory
+  - knowledge
+  - audit
+rules:
+  tenant_id_required_for_production_writes: true
+  cross_tenant_access_denied_by_default: true
+  demo_rows_may_have_null_tenant_until_migration: true

@@ -1,0 +1,31 @@
+name: rag-system
+status: target-design
+type: retrieval-system
+stores:
+  source_metadata: business-db.knowledge
+  vector_store: weaviate
+  source_files: knowledge
+responsibilities:
+  - document_versioning
+  - chunking
+  - embedding
+  - retrieval
+  - reranking
+  - citation_metadata
+  - sync_job_tracking
+allowed_content:
+  - faq
+  - policy
+  - product_guide
+  - job_description
+  - resume_summary
+  - prompt_guideline
+disallowed_realtime_facts:
+  - order_status
+  - inventory
+  - logistics_trace
+  - payment_status
+rules:
+  versioned_documents_required: true
+  retrieval_context_must_be_persisted: memory.context_snapshots
+  no_pii_in_vector_store_without_policy: true

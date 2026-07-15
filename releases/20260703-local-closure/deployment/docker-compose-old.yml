@@ -1,0 +1,140 @@
+﻿name: ai20
+
+networks:
+  app-network:
+    driver: bridge
+volumes:
+  postgres_data:
+  redis_data:
+  weaviate_data:
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: dify
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  redis:
+    image: redis:7-alpine
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  weaviate:
+    image: semitechnologies/weaviate:1.28.5
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    environment:
+      CLUSTER_HOSTNAME: node1
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      DEFAULT_VECTORIZER_MODULE: "none"
+  dify-api:
+    image: langgenius/dify-api:0.15.3
+    restart: always
+    networks:
+      - app-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      weaviate:
+        condition: service_started
+    environment:
+      MODE: api
+      EDITION: SELF_HOSTED
+      SECRET_KEY: ${DIFY_SECRET_KEY}
+      INIT_PASSWORD: ${DIFY_INIT_PASSWORD}
+      LOG_LEVEL: INFO
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: dify
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      WEAVIATE_HOST: weaviate
+      WEAVIATE_PORT: 8080
+      WEAVIATE_SCHEME: http
+      VECTOR_STORE: weaviate
+      CONSOLE_CORS_ALLOW_ORIGINS: "*"
+      WEB_API_CORS_ALLOW_ORIGINS: "*"
+      OPENDAL_SCHEME: fs
+      OPENDAL_FS_ROOT: /app/api/storage
+    volumes:
+      - ../dify/storage:/app/api/storage
+    ports:
+      - "5001:5001"
+  dify-worker:
+    image: langgenius/dify-api:0.15.3
+    restart: always
+    networks:
+      - app-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      weaviate:
+        condition: service_started
+    environment:
+      MODE: worker
+      EDITION: SELF_HOSTED
+      SECRET_KEY: ${DIFY_SECRET_KEY}
+      INIT_PASSWORD: ${DIFY_INIT_PASSWORD}
+      LOG_LEVEL: INFO
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: dify
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      WEAVIATE_HOST: weaviate
+      WEAVIATE_PORT: 8080
+      WEAVIATE_SCHEME: http
+      VECTOR_STORE: weaviate
+      OPENDAL_SCHEME: fs
+      OPENDAL_FS_ROOT: /app/api/storage
+    volumes:
+      - ../dify/storage:/app/api/storage
+  dify-web:
+    image: langgenius/dify-web:0.15.3
+    restart: always
+    networks:
+      - app-network
+    depends_on:
+      - dify-api
+    environment:
+      CONSOLE_API_URL: http://localhost:5001
+      APP_API_URL: http://localhost:5001
+      CONSOLE_CORS_ALLOW_ORIGINS: "*"
+      APP_CORS_ALLOW_ORIGINS: "*"
+    ports:
+      - "8080:3000"
+
+
+

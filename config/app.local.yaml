@@ -1,0 +1,21 @@
+app:
+  env: local
+  name: customer-service-ai
+
+support:
+  default_language: zh-CN
+  handoff_after_unsatisfied_count: 2
+  high_risk_handoff: true
+
+rag:
+  top_k: 5
+  score_threshold: 0.45
+
+cache:
+  default_ttl_seconds: 300
+  order_query_ttl_seconds: 60
+  product_query_ttl_seconds: 300
+
+observability:
+  enable_request_id: true
+  log_level: INFO

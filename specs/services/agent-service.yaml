@@ -1,0 +1,37 @@
+name: agent-service
+status: target-design
+type: internal-service
+responsibilities:
+  - build_context
+  - load_short_term_memory
+  - load_long_term_memory
+  - retrieve_rag_context
+  - call_model_or_dify
+  - call_tools
+  - evaluate_handoff_policy
+  - persist_context_snapshot
+  - write_audit_logs
+inputs:
+  - conversation_id
+  - platform
+  - customer_id
+  - user_message
+  - trace_id
+outputs:
+  - reply_type
+  - content
+  - handoff_required
+  - context_snapshot_id
+  - tool_calls
+  - risk_flags
+dependencies:
+  - business-db
+  - redis
+  - weaviate
+  - dify-api
+  - tool-services
+rules:
+  realtime_facts_source: tool_or_external_api
+  long_term_memory_must_not_override_realtime_facts: true
+  context_snapshot_required: true
+  audit_required: true

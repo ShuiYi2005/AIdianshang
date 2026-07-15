@@ -1,0 +1,39 @@
+name: ai20
+
+services:
+  dify-api:
+    pull_policy: never
+
+  dify-worker:
+    pull_policy: never
+
+  dify-web:
+    pull_policy: never
+
+  plugin-daemon:
+    pull_policy: never
+
+  n8n:
+    pull_policy: never
+
+  db:
+    pull_policy: never
+
+  business-db:
+    pull_policy: never
+
+  redis:
+    pull_policy: never
+
+  weaviate:
+    pull_policy: never
+
+  db-simulator:
+    image: ${DB_SIMULATOR_IMAGE:-ai20-db-simulator:latest}
+    pull_policy: never
+    build: null
+
+  agent-service:
+    image: ${AGENT_SERVICE_IMAGE:-ai20-agent-service:latest}
+    pull_policy: never
+    build: null

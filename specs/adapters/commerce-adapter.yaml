@@ -1,0 +1,29 @@
+name: commerce-adapter
+status: target-design
+type: external-platform-adapter
+purpose: normalize ecommerce platform APIs into internal commerce contracts
+platforms:
+  planned:
+    - douyin_shop
+    - taobao
+    - jd
+contracts:
+  outputs:
+    - UnifiedOrder
+    - UnifiedProduct
+    - UnifiedLogistics
+    - UnifiedRefund
+    - UnifiedCustomer
+responsibilities:
+  - platform_authentication
+  - request_signing
+  - field_mapping
+  - status_mapping
+  - retry_and_backoff
+  - rate_limit_handling
+  - webhook_event_normalization
+  - pii_masking
+rules:
+  internal_model_must_not_depend_on_platform_fields: true
+  raw_payload_stored_only_in_audit_or_webhook_events: true
+  writes_require_idempotency_key: true

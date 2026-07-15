@@ -1,0 +1,26 @@
+name: db-simulator
+type: http-service
+owner_dir: services/db-simulator
+data_source:
+  primary: business-db
+  fallback: services/db-simulator/mock_data.py
+  env: BUSINESS_DATABASE_URL
+base_url_local: http://localhost:8001
+container_port: 8000
+published_port: 8001
+endpoints:
+  - method: GET
+    path: /health
+    purpose: health check
+  - method: GET
+    path: /api/order/{order_id}
+    purpose: query order by order id
+  - method: GET
+    path: /api/product/{sku_id}
+    purpose: query product by sku id
+  - method: GET
+    path: /api/logistics/{tracking_no}
+    purpose: query logistics by tracking number
+  - method: GET
+    path: /api/order/by-logistics/{logistics_no}
+    purpose: query order by logistics number

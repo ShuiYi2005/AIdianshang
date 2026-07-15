@@ -1,0 +1,34 @@
+name: customer-support
+status: current-demo
+steps:
+  - user asks a support question in Dify
+  - workflow records webhook event and idempotency key
+  - workflow builds short-term context from Redis
+  - workflow loads long-term memory summary when available
+  - Dify uses knowledge base or tool calling
+  - Dify calls db-simulator when order, product, or logistics data is needed
+  - context snapshot is persisted for traceability
+  - Dify returns an answer to the user
+memory:
+  short_term: Redis with TTL
+  long_term:
+    - support.conversation_summaries
+    - memory.long_term_memories
+context:
+  persisted_in: memory.context_snapshots
+  includes:
+    - recent_messages
+    - long_term_memory
+    - retrieval_context
+    - tool_context
+    - policy_context
+deduplication:
+  webhook_events: ops.webhook_events
+  platform_messages: support.messages.platform_message_id
+  idempotency_keys: ops.idempotency_keys
+handoff:
+  sensitive_cases:
+    - refund
+    - complaint
+    - compensation
+  action: transfer to human support

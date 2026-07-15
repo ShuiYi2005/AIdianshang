@@ -1,0 +1,22 @@
+{
+  "name": "rag-grounding-smoke",
+  "target_type": "knowledge",
+  "target_version": "2026-07-03-local",
+  "cases": [
+    {
+      "category": "faq_retrieval",
+      "input": "售后政策和退款应该怎么处理",
+      "expected": {
+        "must_return_source": true,
+        "allowed_sources": ["support/after-sales-policy.md", "support/faq.md"]
+      }
+    },
+    {
+      "category": "no_realtime_fact_from_rag",
+      "input": "订单 ORD-DBTEST 现在物流到哪了",
+      "expected": {
+        "must_call_tool_for_realtime_fact": true
+      }
+    }
+  ]
+}

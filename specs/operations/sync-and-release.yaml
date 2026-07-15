@@ -1,0 +1,16 @@
+name: sync-and-release
+status: foundation-designed
+type: operations-policy
+sync_tables:
+  jobs: ops.external_sync_jobs
+  cursors: ops.external_sync_cursors
+  webhook_events: ops.webhook_events
+  idempotency: ops.idempotency_keys
+release_tables:
+  feature_flags: ops.feature_flags
+  rollouts: ops.release_rollouts
+rules:
+  sync_must_handle_duplicate_events: true
+  sync_must_handle_out_of_order_events: true
+  rollout_must_be_reversible: true
+  prompt_knowledge_workflow_tool_changes_require_gray_release: true

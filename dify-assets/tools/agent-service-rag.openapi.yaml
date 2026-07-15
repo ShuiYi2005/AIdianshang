@@ -1,0 +1,52 @@
+openapi: 3.0.3
+info:
+  title: AI20 Customer Service Knowledge Search
+  version: 1.0.0
+  description: Read-only support policy and FAQ search for the local AI20 demo.
+servers:
+  - url: http://agent-service:8010
+paths:
+  /api/rag/search:
+    post:
+      operationId: searchKnowledge
+      summary: Search approved customer-service knowledge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query:
+                  type: string
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  default: 3
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [trace_id, results]
+                properties:
+                  trace_id:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      required: [source_uri, title, excerpt]
+                      properties:
+                        source_uri:
+                          type: string
+                        title:
+                          type: string
+                        score:
+                          type: number
+                        excerpt:
+                          type: string

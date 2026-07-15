@@ -1,0 +1,17 @@
+faq_routing:
+  product:
+    description: 商品材质、尺码、库存、价格、搭配建议
+    use_rag: true
+    use_tool: true
+  order:
+    description: 订单状态、金额、收货信息
+    use_rag: false
+    use_tool: true
+  logistics:
+    description: 物流轨迹、预计送达、快递公司
+    use_rag: false
+    use_tool: true
+  after_sales_policy:
+    description: 售后规则、退换货流程、发票申请
+    use_rag: true
+    use_tool: false

@@ -1,0 +1,23 @@
+{
+  "service": "db-simulator",
+  "responseEnvelope": {
+    "success": {
+      "type": "object",
+      "required": ["code", "data"],
+      "properties": {
+        "code": { "type": "integer", "const": 0 },
+        "data": { "type": "object" }
+      }
+    },
+    "notFound": {
+      "status": 404,
+      "body": {
+        "type": "object",
+        "required": ["detail"],
+        "properties": {
+          "detail": { "type": "string" }
+        }
+      }
+    }
+  }
+}

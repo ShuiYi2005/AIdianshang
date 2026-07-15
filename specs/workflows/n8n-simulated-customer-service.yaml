@@ -1,0 +1,24 @@
+name: n8n-simulated-customer-service
+status: designed
+entrypoint: webhook
+steps:
+  - receive_message
+  - record_webhook_event
+  - check_idempotency_key
+  - call_dify
+  - call_tool_when_needed
+  - build_context_snapshot
+  - evaluate_handoff_rules
+  - persist_memory_and_audit_logs
+  - return_reply_payload
+rules:
+  workflow_only_orchestrates: true
+  business_logic_location: services
+  secrets_location: environment_or_n8n_credentials
+data_contracts:
+  webhook_deduplication: ops.webhook_events(provider,event_id)
+  idempotency: ops.idempotency_keys(scope,idempotency_key)
+  short_term_memory: redis_with_ttl
+  long_term_memory: memory.long_term_memories
+  context_snapshot: memory.context_snapshots
+  handoff_queue: support.handoff_queue

@@ -1,0 +1,8 @@
+name: customer-service-agent
+platform: Dify
+status: configured-in-platform
+responsibilities:
+  - answer product and order questions
+  - use knowledge base when available
+  - call tools for order, product, and logistics queries
+  - hand off sensitive cases to human support

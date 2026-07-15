@@ -1,0 +1,96 @@
+openapi: 3.0.3
+info:
+  title: AI20 Customer Service Facts
+  version: 1.0.0
+  description: Read-only order, product, and logistics facts for the local AI20 demo.
+servers:
+  - url: http://db-simulator:8000
+paths:
+  /api/order/{order_id}:
+    get:
+      operationId: getOrder
+      summary: Get an order by order ID
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelope'
+        '404':
+          description: Order not found
+  /api/product/{sku_id}:
+    get:
+      operationId: getProduct
+      summary: Get a product by SKU ID
+      parameters:
+        - name: sku_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelope'
+        '404':
+          description: Product not found
+  /api/logistics/{tracking_no}:
+    get:
+      operationId: getLogistics
+      summary: Get logistics by tracking number
+      parameters:
+        - name: tracking_no
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Logistics found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelope'
+        '404':
+          description: Logistics not found
+  /api/order/by-logistics/{logistics_no}:
+    get:
+      operationId: getOrderByLogistics
+      summary: Get an order by logistics number
+      parameters:
+        - name: logistics_no
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataEnvelope'
+        '404':
+          description: Order not found
+components:
+  schemas:
+    DataEnvelope:
+      type: object
+      required: [code, data]
+      properties:
+        code:
+          type: integer
+          example: 0
+        data:
+          type: object
+          additionalProperties: true

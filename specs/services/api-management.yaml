@@ -1,0 +1,30 @@
+name: api-management
+status: target-design
+type: edge-layer
+responsibilities:
+  - authentication
+  - authorization
+  - request_signature_verification
+  - rate_limiting
+  - idempotency
+  - api_versioning
+  - error_normalization
+  - request_response_logging
+  - pii_masking
+headers:
+  required:
+    - X-Request-Id
+    - X-Trace-Id
+    - X-Api-Version
+  conditional:
+    - X-Idempotency-Key
+    - X-Client-Id
+    - X-Signature
+data_contracts:
+  idempotency_store: ops.idempotency_keys
+  audit_log: audit.audit_logs
+  security_events: audit.security_events
+rules:
+  no_secret_in_url: true
+  default_timeout_ms: 10000
+  default_rate_limit_scope: client_id
