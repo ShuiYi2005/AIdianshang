@@ -15,6 +15,9 @@ releases/**/images/
 __pycache__/
 *.pyc
 
+# Git worktrees
+.worktrees/
+
 # OS/editor
 .DS_Store
 Thumbs.db
