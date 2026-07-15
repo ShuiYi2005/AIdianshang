@@ -14,13 +14,14 @@ function AuditView({ actions }: { actions: AuditAction[] }) {
 export default function App({ api = apiClient }: { api?: ConsoleApi }) {
   const [route, setRoute] = useState<Route>("workbench");
   const [auditActions, setAuditActions] = useState<AuditAction[]>([]);
+  const [notificationOpen, setNotificationOpen] = useState(false);
   const navigation: Array<{ route: Route; label: string; icon: JSX.Element }> = [
     { route: "workbench", label: "工作台", icon: <HeadsetIcon weight="duotone" /> },
     { route: "training", label: "AI 训练", icon: <RobotIcon weight="duotone" /> },
     { route: "audit", label: "审计", icon: <ClipboardTextIcon weight="duotone" /> },
   ];
   return <div className="app-frame">
-    <header className="global-header"><div className="brand-lockup"><span className="brand-icon"><StorefrontIcon weight="fill" /></span><div><strong>云栈店铺</strong><small>AI 客服运营台 · 模拟环境</small></div></div><div className="global-meta"><span><i className="live-dot" />模拟渠道在线</span><span>坐席：林墨</span><button className="icon-button" aria-label="通知"><BellIcon weight="duotone" /></button></div></header>
+    <header className="global-header"><div className="brand-lockup"><span className="brand-icon"><StorefrontIcon weight="fill" /></span><div><strong>云栈店铺</strong><small>AI 客服运营台 · 模拟环境</small></div></div><div className="global-meta"><span><i className="live-dot" />模拟渠道在线</span><span>坐席：林墨</span><button className="icon-button" aria-label="通知" aria-expanded={notificationOpen} onClick={() => setNotificationOpen((open) => !open)}><BellIcon weight="duotone" /></button>{notificationOpen && <div className="notification-popover" role="status"><strong>模拟环境通知</strong><span>当前没有需要处理的系统通知。</span><button onClick={() => setNotificationOpen(false)}>知道了</button></div>}</div></header>
     <div className="app-body"><nav className="side-nav" aria-label="主导航"><div className="nav-group">{navigation.map((item) => <button key={item.route} className={route === item.route ? "nav-item active" : "nav-item"} onClick={() => setRoute(item.route)} aria-current={route === item.route ? "page" : undefined}>{item.icon}<span>{item.label}</span></button>)}</div><div className="nav-footer"><ListBulletsIcon weight="duotone" /><span>所有外发均为本地模拟</span></div></nav><section className="app-content">{route === "workbench" && <Workbench api={api} onAuditChange={setAuditActions} />}{route === "training" && <TrainingCenter api={api} onAuditChange={setAuditActions} />}{route === "audit" && <AuditView actions={auditActions} />}</section></div>
   </div>;
 }

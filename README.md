@@ -40,7 +40,12 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1 -EnvFile deployment/
 - n8n：`http://localhost:5678`
 - db-simulator：`http://localhost:8001`
 - agent-service：`http://localhost:8010`
+- AI 客服运营台：`http://localhost:4173`
 - Business PostgreSQL：`localhost:5433`
+
+## AI 客服运营台
+
+`http://localhost:4173` 提供客服工作台与 AI 训练中心。当前未接入真实电商后台：人工回复会明确标记为“模拟渠道已发送”，但会真实写入会话、工单与审计；训练主题可上传受限素材、预览、发布不可变版本并回滚。退款、赔偿、投诉、身份核验等高风险请求始终转人工。
 
 ## 产品化验证
 

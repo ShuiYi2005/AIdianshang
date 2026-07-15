@@ -24,6 +24,9 @@ services/support-console/*.tsbuildinfo
 services/support-console/vite.config.js
 services/support-console/vite.config.d.ts
 
+# Local visual QA captures (the signed-off report is versioned).
+docs/design-qa-*.png
+
 # OS/editor
 .DS_Store
 Thumbs.db

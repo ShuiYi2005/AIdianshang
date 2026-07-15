@@ -1,5 +1,5 @@
 name: agent-workbench
-status: backend-foundation-designed
+status: local-console-delivered
 type: support-console
 backend_tables:
   handoff_queue: support.handoff_queue
@@ -7,6 +7,10 @@ backend_tables:
   tickets: support.tickets
   conversations: support.conversations
   context: memory.context_snapshots
+  training_topics: knowledge.training_topics
+  training_assets: knowledge.training_assets
+  training_versions: knowledge.training_versions
+  console_actions: audit.console_action_logs
 views_needed:
   - queue
   - conversation_detail
@@ -14,6 +18,14 @@ views_needed:
   - context_summary
   - ticket_actions
   - audit_timeline
+  - training_center
+  - training_versions
+api:
+  console_base: /api/console
+  training_base: /api/training
+  simulated_delivery_status: simulated_sent
 rules:
   sensitive_fields_follow_role_masking: true
   handoff_requires_context_snapshot: true
+  sensitive_training_preview_requires_handoff: true
+  real_channel_adapter_is_not_simulated: true

@@ -215,7 +215,25 @@ async def agent_reply(
     dify_conversation_id = None
     training_match = None if message_requires_handoff else published_training_match(payload.user_message)
 
-    if use_dify:
+    if not message_requires_handoff and order_id:
+        tool_payload, latency_ms, status = await call_order_tool(order_id, trace_id)
+        save_metric("tool.latency_ms", latency_ms, {"tool_name": "get_order", "status": status}, trace_id)
+        save_tool_log(trace_id, "get_order", {"order_id": order_id}, tool_payload, status, latency_ms)
+        tool_calls.append({"tool_name": "get_order", "status": status, "latency_ms": latency_ms})
+        model_provider = "tool-orchestrator"
+        model_name = "order-lookup"
+        raw_order = tool_payload.get("data") if isinstance(tool_payload, dict) else None
+        if status == "success" and raw_order:
+            masked_order = mask_order(raw_order)
+            tool_context["order"] = masked_order
+            content = f"订单 {masked_order.get('order_id')} 当前状态为 {masked_order.get('status')}。"
+            if masked_order.get("logistics_no"):
+                content += f" 物流单号为 {masked_order.get('logistics_no')}。"
+        else:
+            handoff_required = True
+            handoff_reason = "tool_failure"
+            content = "订单信息暂时查询失败，我会为你转人工继续处理。"
+    elif use_dify:
         if message_requires_handoff:
             handoff_required = True
             handoff_reason = "sensitive_case"
@@ -286,22 +304,6 @@ async def agent_reply(
         handoff_required = True
         handoff_reason = "sensitive_case"
         content = "这个问题涉及投诉、退款或赔付，我会为你转人工处理，并保留当前上下文。"
-    elif order_id:
-        tool_payload, latency_ms, status = await call_order_tool(order_id, trace_id)
-        save_metric("tool.latency_ms", latency_ms, {"tool_name": "get_order", "status": status}, trace_id)
-        save_tool_log(trace_id, "get_order", {"order_id": order_id}, tool_payload, status, latency_ms)
-        tool_calls.append({"tool_name": "get_order", "status": status, "latency_ms": latency_ms})
-        raw_order = tool_payload.get("data") if isinstance(tool_payload, dict) else None
-        if status == "success" and raw_order:
-            masked_order = mask_order(raw_order)
-            tool_context["order"] = masked_order
-            content = f"订单 {masked_order.get('order_id')} 当前状态为 {masked_order.get('status')}。"
-            if masked_order.get("logistics_no"):
-                content += f" 物流单号为 {masked_order.get('logistics_no')}。"
-        else:
-            handoff_required = True
-            handoff_reason = "tool_failure"
-            content = "订单信息暂时查询失败，我会为你转人工继续处理。"
     elif training_match:
         content = training_match["reply"]
         model_provider = "local-training"

@@ -71,7 +71,8 @@ export function Workbench({ api, onAuditChange }: { api: WorkbenchApi; onAuditCh
       const result = await api.claim(detail.handoff.id);
       setDetail({ ...detail, handoff: result.handoff });
       setNotice("任务已领取，进入人工处理状态。");
-      await loadQueue(queueStatus);
+      setQueueStatus("assigned");
+      await loadQueue("assigned");
     } catch (reason) { setError(reason instanceof Error ? reason.message : "领取失败，请重试。"); }
     finally { setBusy(null); }
   };
@@ -107,8 +108,9 @@ export function Workbench({ api, onAuditChange }: { api: WorkbenchApi; onAuditCh
       await api.resolve(detail.handoff.id);
       setNotice("任务已解决，记录已写入审计。");
       setConfirmResolve(false);
-      await loadQueue(queueStatus);
       setDetail({ ...detail, handoff: { ...detail.handoff, status: "resolved" } });
+      setQueueStatus("resolved");
+      await loadQueue("resolved");
     } catch (reason) { setError(reason instanceof Error ? reason.message : "解决失败，请重试。"); }
     finally { setBusy(null); }
   };

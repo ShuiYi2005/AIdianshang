@@ -20,12 +20,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .brand-icon svg { width: 23px; height: 23px; }
 .brand-lockup strong { display: block; font-size: 15px; letter-spacing: .02em; }
 .brand-lockup small, .global-meta, .muted-copy { color: #718096; font-size: 12px; }
-.global-meta { gap: 20px; }
+.global-meta { position: relative; gap: 20px; }
 .global-meta > span { display: inline-flex; align-items: center; gap: 6px; }
 .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 0 3px #dcfce7; }
 .icon-button { width: 35px; height: 35px; padding: 0; display: inline-grid; place-items: center; color: #4d5b70; background: #f3f6fa; border: 1px solid #e2e8f0; border-radius: 9px; }
 .icon-button:hover { background: #eaf0fb; color: #1d4ed8; }
 .icon-button svg { width: 19px; height: 19px; }
+.notification-popover { position: absolute; z-index: 5; top: 44px; right: 0; display: grid; gap: 6px; min-width: 224px; padding: 13px; color: #334155; background: #fff; border: 1px solid #dce4ed; border-radius: 10px; box-shadow: 0 14px 28px rgba(23, 32, 51, .14); font-size: 12px; }
+.notification-popover strong { color: #1e293b; font-size: 13px; }.notification-popover span { color: #64748b; }.notification-popover button { justify-self: end; padding: 5px 8px; color: #1d4ed8; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 12px; }
 
 .app-body { min-height: 0; display: grid; grid-template-columns: 94px minmax(0, 1fr); }
 .side-nav { display: flex; flex-direction: column; justify-content: space-between; padding: 16px 10px; color: #69778b; background: #f8fafc; border-right: 1px solid #dce4ed; }
@@ -59,7 +61,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .queue-copy small, .topic-item small { overflow: hidden; color: #758296; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .priority-dot { flex: 0 0 auto; padding: 3px 5px; border-radius: 5px; font-size: 10px; font-style: normal; }
 .priority-dot.high, .priority-dot.urgent { color: #b42318; background: #fee4e2; }
-.priority-dot.normal { color: #b54708; background: #fef0c7; }
+.priority-dot.normal { color: #475569; background: #e2e8f0; }
 .priority-dot.low { color: #2563eb; background: #dbeafe; }
 .empty-state { display: grid; justify-items: center; gap: 8px; padding: 32px 16px; color: #8b98aa; font-size: 13px; text-align: center; }
 

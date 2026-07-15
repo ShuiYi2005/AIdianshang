@@ -1,6 +1,7 @@
 param(
     [string]$EvalFile = "evaluations/customer-service-smoke.json",
-    [string]$ComposeFile = "deployment/docker-compose.yml"
+    [string]$ComposeFile = "deployment/docker-compose.yml",
+    [string]$EnvFile = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -9,7 +10,8 @@ if (!(Test-Path -LiteralPath $EvalFile)) {
     throw "Evaluation file not found: $EvalFile"
 }
 
-docker compose -f $ComposeFile up -d business-db | Out-Null
+$composeArgs = if ($EnvFile) { @("--env-file", $EnvFile) } else { @() }
+docker compose @composeArgs -f $ComposeFile up -d business-db | Out-Null
 
 $deadline = (Get-Date).AddSeconds(60)
 do {

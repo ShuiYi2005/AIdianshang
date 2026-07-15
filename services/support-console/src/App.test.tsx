@@ -29,3 +29,12 @@ it("switches from the workbench to AI training", async () => {
   expect(screen.getByRole("heading", { name: "AI 训练中心" })).toBeInTheDocument();
   expect(screen.getByText("把店铺经验变成可验证、可回滚的 AI 回复。")).toBeInTheDocument();
 });
+
+it("opens the simulation notification panel", async () => {
+  const user = userEvent.setup();
+  render(<App api={api} />);
+
+  await user.click(screen.getByRole("button", { name: "通知" }));
+
+  expect(await screen.findByRole("status")).toHaveTextContent("当前没有需要处理的系统通知");
+});
