@@ -17,6 +17,7 @@ __pycache__/
 
 # Git worktrees
 .worktrees/
+services/agent-service/training-assets/
 
 # OS/editor
 .DS_Store

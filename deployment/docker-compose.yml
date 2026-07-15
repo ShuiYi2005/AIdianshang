@@ -10,6 +10,7 @@ volumes:
   redis_data:
   weaviate_data:
   n8n_data:
+  training_assets:
 
 services:
 
@@ -284,6 +285,7 @@ services:
       DIFY_APP_TIMEOUT_SECONDS: ${DIFY_APP_TIMEOUT_SECONDS:-15}
     volumes:
       - ../knowledge:/app/knowledge:ro
+      - training_assets:/app/training-assets
     ports:
       - "8010:8010"
     healthcheck:

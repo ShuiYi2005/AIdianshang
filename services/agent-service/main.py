@@ -30,9 +30,12 @@ from repository import (
     save_metric,
     save_tool_log,
 )
+from console_repository import list_published_training_versions
 from security import access_preview
 from state_machine import transition_preview
 from console_api import router as console_router
+from training_api import router as training_router
+from training_service import SENSITIVE_TERMS, preview_training
 
 
 DB_SIMULATOR_URL = os.getenv("DB_SIMULATOR_URL", "http://db-simulator:8000")
@@ -46,6 +49,7 @@ app.add_middleware(
     allow_headers=["Content-Type", "X-Trace-Id", "X-Idempotency-Key"],
 )
 app.include_router(console_router)
+app.include_router(training_router)
 
 
 class MaskingPreviewRequest(BaseModel):
@@ -89,9 +93,26 @@ def trace_from_header(trace_id: str | None) -> str:
 
 
 def should_handoff(message: str) -> bool:
-    lowered = message.lower()
-    keywords = ["complain", "complaint", "compensation", "refund", "投诉", "赔偿", "退款", "转人工"]
+    lowered = message.casefold()
+    keywords = [*SENSITIVE_TERMS, "转人工", "human agent"]
     return any(keyword in lowered for keyword in keywords)
+
+
+def published_training_match(message: str) -> dict[str, Any] | None:
+    """Find the first active immutable training version matching a safe message."""
+    for published_version in list_published_training_versions():
+        snapshot = published_version.get("snapshot")
+        topic = snapshot.get("topic") if isinstance(snapshot, dict) else None
+        if not isinstance(topic, dict):
+            continue
+        preview = preview_training(topic, message)
+        if preview["matched"]:
+            return {
+                "reply": str(preview["reply"]),
+                "topic_id": published_version["topic_id"],
+                "version": published_version["version"],
+            }
+    return None
 
 
 @app.get("/health")
@@ -179,6 +200,7 @@ async def agent_reply(
     customer_uuid = ensure_customer(payload.platform, payload.customer_id)
     conversation_uuid = ensure_conversation(payload.platform, payload.conversation_id, customer_uuid)
     order_id = extract_order_id(payload.user_message)
+    message_requires_handoff = should_handoff(payload.user_message)
     dify_config = DifyClientConfig.from_environment()
     use_dify = dify_config.configured
 
@@ -191,12 +213,22 @@ async def agent_reply(
     model_provider = "dify" if use_dify else "local"
     model_name = "dify-chatflow" if use_dify else "agent-service-template"
     dify_conversation_id = None
+    training_match = None if message_requires_handoff else published_training_match(payload.user_message)
 
     if use_dify:
-        if should_handoff(payload.user_message):
+        if message_requires_handoff:
             handoff_required = True
             handoff_reason = "sensitive_case"
             content = "\u8fd9\u4e2a\u95ee\u9898\u9700\u8981\u4eba\u5de5\u5ba2\u670d\u5904\u7406\uff0c\u6211\u5df2\u4fdd\u7559\u5f53\u524d\u4e0a\u4e0b\u6587\u3002"
+        elif training_match:
+            content = training_match["reply"]
+            model_provider = "local-training"
+            model_name = "published-training-topic"
+            tool_context["training"] = {
+                "topic_id": training_match["topic_id"],
+                "version": training_match["version"],
+                "delivery": "local_training_match",
+            }
         else:
             try:
                 dify_result = await DifyChatClient(dify_config).chat(
@@ -250,6 +282,10 @@ async def agent_reply(
                     0,
                 )
                 tool_calls.append({"tool_name": "dify_chatflow", "status": "failed", "latency_ms": 0})
+    elif message_requires_handoff:
+        handoff_required = True
+        handoff_reason = "sensitive_case"
+        content = "这个问题涉及投诉、退款或赔付，我会为你转人工处理，并保留当前上下文。"
     elif order_id:
         tool_payload, latency_ms, status = await call_order_tool(order_id, trace_id)
         save_metric("tool.latency_ms", latency_ms, {"tool_name": "get_order", "status": status}, trace_id)
@@ -266,13 +302,19 @@ async def agent_reply(
             handoff_required = True
             handoff_reason = "tool_failure"
             content = "订单信息暂时查询失败，我会为你转人工继续处理。"
-    elif should_handoff(payload.user_message):
-        handoff_required = True
-        handoff_reason = "sensitive_case"
-        content = "这个问题涉及投诉、退款或赔付，我会为你转人工处理，并保留当前上下文。"
-    elif retrieval_context:
-        top = retrieval_context[0]
-        content = f"我查到一条相关知识：{top.get('excerpt')} 来源：{top.get('source_uri')}。"
+    elif training_match:
+        content = training_match["reply"]
+        model_provider = "local-training"
+        model_name = "published-training-topic"
+        tool_context["training"] = {
+            "topic_id": training_match["topic_id"],
+            "version": training_match["version"],
+            "delivery": "local_training_match",
+        }
+    else:
+        if retrieval_context:
+            top = retrieval_context[0]
+            content = f"我查到一条相关知识：{top.get('excerpt')} 来源：{top.get('source_uri')}。"
 
     policy_context = {
         "handoff_required": handoff_required,
