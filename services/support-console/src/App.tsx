@@ -8,7 +8,7 @@ import type { AuditAction, ConsoleApi } from "./types";
 type Route = "workbench" | "training" | "audit";
 
 function AuditView({ actions }: { actions: AuditAction[] }) {
-  return <main className="audit-shell"><header className="page-heading"><div><span className="eyebrow">可追溯操作</span><h1>审计记录</h1><p>显示当前选中会话或训练主题最近读取到的操作记录。</p></div></header><section className="audit-table">{actions.length ? actions.map((action) => <article key={action.id}><span>{new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(action.created_at))}</span><strong>{action.action}</strong><span>{action.actor_role}</span><code>{action.trace_id ?? "—"}</code></article>) : <div className="empty-state"><ClipboardTextIcon weight="duotone" size={32} />选择会话或训练主题后，这里会展示其审计证据。</div>}</section></main>;
+  return <main className="audit-shell"><header className="page-heading"><div><span className="eyebrow">可追溯操作</span><h1>审计记录</h1><p>显示当前选中会话或训练主题最近读取到的操作记录。</p></div></header><section className="audit-scroll" aria-label="审计记录列表"><div className="audit-table">{actions.length ? actions.map((action) => <article key={action.id}><span>{new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(action.created_at))}</span><strong>{action.action}</strong><span>{action.actor_role}</span><code>{action.trace_id ?? "—"}</code></article>) : <div className="empty-state"><ClipboardTextIcon weight="duotone" size={32} />选择会话或训练主题后，这里会展示其审计证据。</div>}</div></section></main>;
 }
 
 export default function App({ api = apiClient }: { api?: ConsoleApi }) {

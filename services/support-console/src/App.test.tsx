@@ -38,3 +38,12 @@ it("opens the simulation notification panel", async () => {
 
   expect(await screen.findByRole("status")).toHaveTextContent("当前没有需要处理的系统通知");
 });
+
+it("renders audit records inside an accessible internal region", async () => {
+  const user = userEvent.setup();
+  render(<App api={api} />);
+
+  await user.click(screen.getByRole("button", { name: "审计" }));
+
+  expect(screen.getByRole("region", { name: "审计记录列表" })).toBeInTheDocument();
+});
