@@ -129,3 +129,18 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .message-stream { padding: 18px 16px; }
   .reply-composer { padding: 13px 16px calc(13px + env(safe-area-inset-bottom)); }
 }
+
+/* Training stays inside the same fixed shell and delegates overflow to its editor. */
+.training-shell { position: relative; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; display: grid; grid-template-columns: 270px minmax(0, 1fr); }
+.topic-list-panel { position: relative; min-width: 0; min-height: 0; overflow: hidden; display: grid; grid-template-rows: auto auto minmax(0, 1fr); }
+.topic-list { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.training-editor { min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.mobile-topic-toggle { display: none; }
+
+@media (max-width: 900px) {
+  .training-shell { grid-template-columns: minmax(0, 1fr); }
+  .topic-list-panel { display: none; }
+  .topic-list-panel.is-mobile-open { position: absolute; inset: 0; z-index: 3; display: grid; padding-top: 54px; background: #fff; border-right: 0; }
+  .training-editor { padding: 22px 16px; }
+  .mobile-topic-toggle { display: inline-flex; }
+}

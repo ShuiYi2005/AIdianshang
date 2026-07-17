@@ -43,3 +43,24 @@ it("creates a topic and previews its protected reply", async () => {
   await user.click(screen.getByRole("button", { name: "预览回复" }));
   expect(await screen.findByText("需要人工客服核验后处理。")).toBeInTheDocument();
 });
+
+it("opens and closes the training-topic drawer without leaving the editor", async () => {
+  const user = userEvent.setup();
+  const api = {
+    listTopics: vi.fn().mockResolvedValue({ items: [topic] }),
+    getTopic: vi.fn(),
+    createTopic: vi.fn(),
+    updateTopic: vi.fn(),
+    uploadAsset: vi.fn(),
+    previewTopic: vi.fn(),
+    publishTopic: vi.fn(),
+    rollbackTopic: vi.fn(),
+  };
+  render(<TrainingCenter api={api} />);
+
+  await user.click(screen.getByRole("button", { name: "主题列表" }));
+  expect(screen.getByRole("dialog", { name: "主题列表" })).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "关闭主题列表" }));
+  expect(screen.queryByRole("dialog", { name: "主题列表" })).not.toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "AI 训练中心" })).toBeVisible();
+});
