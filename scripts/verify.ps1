@@ -41,6 +41,8 @@ Invoke-CheckedScript "tests/services/verify_agent_service.ps1" @("-EnvFile", $En
 Invoke-CheckedScript "tests/services/verify_support_console_training.ps1" @("-Phase", "All")
 & node tests/ui/verify_support_console_ui.mjs
 if ($LASTEXITCODE -ne 0) { throw "Verification script failed: tests/ui/verify_support_console_ui.mjs" }
+& node tests/ui/verify_fixed_shell_layout.mjs
+if ($LASTEXITCODE -ne 0) { throw "Verification script failed: tests/ui/verify_fixed_shell_layout.mjs" }
 Invoke-CheckedScript "tests/services/verify_n8n_webhook.ps1" @("-EnvFile", $EnvFile, "-ComposeFile", $ComposeFile)
 Invoke-CheckedScript "scripts/verify-rag.ps1" @("-EnvFile", $EnvFile, "-ComposeFile", $ComposeFile)
 Invoke-CheckedScript "scripts/verify-observability.ps1" @("-EnvFile", $EnvFile, "-ComposeFile", $ComposeFile)

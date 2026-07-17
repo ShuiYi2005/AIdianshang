@@ -130,6 +130,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .reply-composer { padding: 13px 16px calc(13px + env(safe-area-inset-bottom)); }
 }
 
+.evidence-audit-list { display: grid; padding: 0; margin: 0; list-style: none; }
+.evidence-audit-list li { display: grid; gap: 3px; padding: 8px 0; border-top: 1px dashed #e3e8ef; }
+.evidence-audit-list strong { color: #334155; font-size: 11px; }
+.evidence-audit-list span { color: #718096; font-size: 10px; }
+
 /* Training stays inside the same fixed shell and delegates overflow to its editor. */
 .training-shell { position: relative; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; display: grid; grid-template-columns: 270px minmax(0, 1fr); }
 .topic-list-panel { position: relative; min-width: 0; min-height: 0; overflow: hidden; display: grid; grid-template-rows: auto auto minmax(0, 1fr); }

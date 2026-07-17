@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import { Workbench } from "./Workbench";
@@ -128,4 +128,30 @@ it("opens and closes the mobile queue and customer-information drawers", async (
 
   await user.click(screen.getByRole("button", { name: "客户信息" }));
   expect(screen.getByRole("dialog", { name: "客户信息" })).toBeInTheDocument();
+});
+
+it("renders audit records in the evidence panel so long context remains locally scrollable", async () => {
+  const auditActions = Array.from({ length: 3 }, (_, index) => ({
+    id: `audit-${index + 1}`,
+    actor_role: "human",
+    action: "simulated_reply_sent",
+    target_type: "handoff",
+    target_id: handoff.id,
+    trace_id: null,
+    details: {},
+    created_at: `2026-07-15T11:0${index}:00Z`,
+  }));
+  const api = {
+    listQueue: vi.fn().mockResolvedValue({ items: [handoff] }),
+    getHandoff: vi.fn().mockResolvedValue({ ...detail, audit_actions: auditActions }),
+    claim: vi.fn(),
+    reply: vi.fn(),
+    createTicket: vi.fn(),
+    resolve: vi.fn(),
+  };
+  render(<Workbench api={api} />);
+
+  const evidencePanel = await screen.findByLabelText("客户与证据面板");
+  expect(within(evidencePanel).getByText("最近操作")).toBeInTheDocument();
+  expect(within(evidencePanel).getAllByText("已模拟发送")).toHaveLength(3);
 });

@@ -2,6 +2,14 @@ import { FileTextIcon, PackageIcon, ShieldCheckIcon, WarningCircleIcon } from "@
 import productImage from "../assets/product-chair.png";
 import type { HandoffDetail } from "../types";
 
+function auditActionLabel(action: string) {
+  return { human_reply: "人工回复", simulated_reply_sent: "已模拟发送", handoff_claimed: "领取会话", handoff_resolved: "解决会话", ticket_created: "创建工单" }[action] ?? action;
+}
+
+function formatAuditTime(value: string) {
+  return new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", month: "numeric", day: "numeric" }).format(new Date(value));
+}
+
 export function EvidencePanel({ detail, mobileOpen = false, onClose }: { detail: HandoffDetail | null; mobileOpen?: boolean; onClose?: () => void }) {
   const panelProps = mobileOpen ? { role: "dialog" as const, "aria-modal": true, "aria-label": "客户信息" } : { "aria-label": "客户与证据面板" };
   const closeControl = mobileOpen ? <button className="drawer-close" aria-label="关闭客户信息" onClick={onClose}>关闭</button> : null;
@@ -49,6 +57,16 @@ export function EvidencePanel({ detail, mobileOpen = false, onClose }: { detail:
           <div><dt>工单</dt><dd>{detail.tickets.length} 张</dd></div>
         </dl>
       </section>
+
+      {detail.audit_actions.length > 0 && <section className="evidence-section evidence-audit">
+        <div className="section-label"><FileTextIcon weight="fill" /> 最近操作</div>
+        <ol className="evidence-audit-list">
+          {detail.audit_actions.map((action) => <li key={action.id}>
+            <strong>{auditActionLabel(action.action)}</strong>
+            <span>{action.actor_role} · {formatAuditTime(action.created_at)}</span>
+          </li>)}
+        </ol>
+      </section>}
     </aside>
   );
 }
