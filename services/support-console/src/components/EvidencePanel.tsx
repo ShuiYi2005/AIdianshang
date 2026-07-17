@@ -2,15 +2,19 @@ import { FileTextIcon, PackageIcon, ShieldCheckIcon, WarningCircleIcon } from "@
 import productImage from "../assets/product-chair.png";
 import type { HandoffDetail } from "../types";
 
-export function EvidencePanel({ detail }: { detail: HandoffDetail | null }) {
+export function EvidencePanel({ detail, mobileOpen = false, onClose }: { detail: HandoffDetail | null; mobileOpen?: boolean; onClose?: () => void }) {
+  const panelProps = mobileOpen ? { role: "dialog" as const, "aria-modal": true, "aria-label": "客户信息" } : { "aria-label": "客户与证据面板" };
+  const closeControl = mobileOpen ? <button className="drawer-close" aria-label="关闭客户信息" onClick={onClose}>关闭</button> : null;
+
   if (!detail) {
-    return <aside className="evidence-panel empty-panel">选择一个任务，查看客户、订单与审计证据。</aside>;
+    return <aside className={`evidence-panel empty-panel${mobileOpen ? " is-mobile-open" : ""}`} {...panelProps}>{closeControl}选择一个任务，查看客户、订单与审计证据。</aside>;
   }
 
   const { handoff } = detail;
   const message = String(handoff.payload.user_message ?? "无原始客户消息");
   return (
-    <aside className="evidence-panel" aria-label="客户与证据面板">
+    <aside className={`evidence-panel${mobileOpen ? " is-mobile-open" : ""}`} {...panelProps}>
+      {closeControl}
       <section className="evidence-section customer-card">
         <div className="section-label"><ShieldCheckIcon weight="fill" /> 脱敏客户</div>
         <strong>{handoff.customer_nickname ?? "匿名客户"}</strong>

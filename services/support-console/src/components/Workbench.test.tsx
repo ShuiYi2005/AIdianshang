@@ -107,3 +107,25 @@ it("keeps a resolved conversation visible in the resolved queue", async () => {
   expect(await screen.findByText("已解决", { selector: ".status-chip.resolved" })).toBeInTheDocument();
   expect(screen.getByLabelText("人工回复")).toBeDisabled();
 });
+
+it("opens and closes the mobile queue and customer-information drawers", async () => {
+  const user = userEvent.setup();
+  const api = {
+    listQueue: vi.fn().mockResolvedValue({ items: [handoff] }),
+    getHandoff: vi.fn().mockResolvedValue(detail),
+    claim: vi.fn(),
+    reply: vi.fn(),
+    createTicket: vi.fn(),
+    resolve: vi.fn(),
+  };
+  render(<Workbench api={api} />);
+
+  await screen.findByText("顾客 3028");
+  await user.click(screen.getByRole("button", { name: "会话列表" }));
+  expect(screen.getByRole("dialog", { name: "会话列表" })).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "关闭会话列表" }));
+  expect(screen.queryByRole("dialog", { name: "会话列表" })).not.toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "客户信息" }));
+  expect(screen.getByRole("dialog", { name: "客户信息" })).toBeInTheDocument();
+});

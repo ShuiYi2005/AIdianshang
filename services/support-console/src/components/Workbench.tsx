@@ -35,6 +35,7 @@ export function Workbench({ api, onAuditChange }: { api: WorkbenchApi; onAuditCh
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [mobilePanel, setMobilePanel] = useState<"queue" | "evidence" | null>(null);
 
   const loadQueue = async (status = queueStatus) => {
     setError("");
@@ -118,7 +119,9 @@ export function Workbench({ api, onAuditChange }: { api: WorkbenchApi; onAuditCh
   const statusSwitch = (status: QueueStatus, label: string) => <button className={queueStatus === status ? "queue-filter active" : "queue-filter"} onClick={() => setQueueStatus(status)}>{label}</button>;
 
   return <main className="workbench-shell">
-    <section className="queue-panel" aria-label="转人工队列">
+    {mobilePanel && <button className="drawer-backdrop" aria-label="关闭覆盖层" onClick={() => setMobilePanel(null)} />}
+    <section className={`queue-panel${mobilePanel === "queue" ? " is-mobile-open" : ""}`} role={mobilePanel === "queue" ? "dialog" : undefined} aria-modal={mobilePanel === "queue" || undefined} aria-label={mobilePanel === "queue" ? "会话列表" : "转人工队列"}>
+      {mobilePanel === "queue" && <button className="drawer-close" aria-label="关闭会话列表" onClick={() => setMobilePanel(null)}>关闭</button>}
       <div className="panel-heading"><div><span className="eyebrow">人工接管</span><h2>会话队列</h2></div><span className="count-pill">{items.length}</span></div>
       <div className="queue-filters">{statusSwitch("pending", "待领取")}{statusSwitch("assigned", "已领取")}{statusSwitch("resolved", "已解决")}</div>
       <div className="queue-list">
@@ -134,21 +137,24 @@ export function Workbench({ api, onAuditChange }: { api: WorkbenchApi; onAuditCh
     <section className="conversation-panel" aria-label="客服会话">
       {detail ? <>
         <header className="conversation-header"><div><span className="eyebrow">{detail.handoff.platform ?? "模拟电商"}</span><h2>{detail.handoff.customer_nickname ?? "匿名客户"}</h2><p>AI 已保留上下文，人工操作将同步写入本地模拟渠道与审计。</p></div><span className={`status-chip ${detail.handoff.status}`}>{detail.handoff.status === "pending" ? "待领取" : detail.handoff.status === "assigned" ? "人工处理中" : "已解决"}</span></header>
+        <div className="mobile-context-actions" aria-label="移动会话上下文"><button className="secondary-action queue-context-action" aria-expanded={mobilePanel === "queue"} onClick={() => setMobilePanel("queue")}>会话列表</button><button className="secondary-action" aria-expanded={mobilePanel === "evidence"} onClick={() => setMobilePanel("evidence")}>客户信息</button></div>
         <div className="action-row">
           <button className="secondary-action" disabled={detail.handoff.status !== "pending" || busy === "claim"} onClick={() => void claim()}><UserCircleIcon weight="bold" />领取</button>
           <button className="secondary-action" onClick={() => setTicketOpen((open) => !open)}><TicketIcon weight="bold" />创建工单</button>
           <button className="danger-action" disabled={detail.handoff.status !== "assigned"} onClick={() => setConfirmResolve(true)}><CheckCircleIcon weight="bold" />解决任务</button>
         </div>
+        <div className="conversation-inline-state">
         {ticketOpen && <div className="ticket-form"><label>工单主题<input value={ticketSubject} onChange={(event) => setTicketSubject(event.target.value)} placeholder="例如：退款人工核验" /></label><label>处理说明<textarea value={ticketDescription} onChange={(event) => setTicketDescription(event.target.value)} placeholder="记录处理计划与承诺" /></label><button className="primary-action" disabled={busy === "ticket" || !ticketSubject.trim() || !ticketDescription.trim()} onClick={() => void createTicket()}><PlusIcon weight="bold" />提交工单</button></div>}
         {confirmResolve && <div className="confirmation"><WarningCircleIcon weight="fill" /><span>确认解决该任务？此操作会关闭当前会话并记录审计。</span><button onClick={() => setConfirmResolve(false)}>取消</button><button className="danger-action" disabled={busy === "resolve"} onClick={() => void resolve()}>确认解决</button></div>}
         {error && <div className="notice error-notice" role="alert">{error}</div>}
         {notice && <div className="notice success-notice" role="status">{notice}</div>}
+        </div>
         <div className="message-stream">
           {detail.messages.map((message) => <article key={message.id} className={`message ${message.sender_type}`}><span className="message-icon">{message.sender_type === "ai" ? <RobotIcon weight="fill" /> : <UserCircleIcon weight="fill" />}</span><div><small>{message.sender_type === "customer" ? "客户" : message.sender_type === "ai" ? "AI 客服" : "人工客服"} · {formatTime(message.created_at)}</small><p>{message.content}</p></div></article>)}
         </div>
         <div className="reply-composer"><label htmlFor="human-reply">人工回复</label><textarea id="human-reply" value={reply} onChange={(event) => setReply(event.target.value)} placeholder="输入对客户的回复；发送将写入本地模拟渠道。" disabled={detail.handoff.status !== "assigned"} /><div><span>真实电商未接入 · 当前为模拟发送</span><button className="primary-action" disabled={busy === "reply" || detail.handoff.status !== "assigned" || !reply.trim()} onClick={() => void sendReply()}><PaperPlaneTiltIcon weight="fill" />发送回复</button></div></div>
       </> : <div className="conversation-empty"><RobotIcon weight="duotone" size={42} /><h2>选择一个待处理会话</h2><p>领取后可发送人工回复、创建工单并保留审计记录。</p></div>}
     </section>
-    <EvidencePanel detail={detail} />
+    <EvidencePanel detail={detail} mobileOpen={mobilePanel === "evidence"} onClose={() => setMobilePanel(null)} />
   </main>;
 }
