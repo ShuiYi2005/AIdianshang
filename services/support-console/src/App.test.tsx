@@ -47,3 +47,21 @@ it("renders audit records inside an accessible internal region", async () => {
 
   expect(screen.getByRole("region", { name: "审计记录列表" })).toBeInTheDocument();
 });
+
+it("makes app-level navigation inert while a mobile workbench drawer is open", async () => {
+  const user = userEvent.setup();
+  const handoff = {
+    id: "handoff-1", conversation_id: "conversation-1", customer_id: "customer-1", trigger_reason: "sensitive_case", priority: "high" as const, status: "assigned" as const, created_at: "2026-07-15T11:00:00Z", customer_nickname: "顾客 3028", platform_customer_id: "3028", platform: "simulated-ecommerce", platform_conversation_id: "conversation-1", conversation_status: "human_handling", payload: { user_message: "I need a refund" },
+  };
+  const modalApi = { ...api, listQueue: vi.fn().mockResolvedValue({ items: [handoff] }), getHandoff: vi.fn().mockResolvedValue({ handoff, messages: [], tickets: [], audit_actions: [] }) };
+  render(<App api={modalApi} />);
+
+  await screen.findByText("顾客 3028");
+  await user.click(screen.getByRole("button", { name: "会话列表" }));
+
+  expect(await screen.findByRole("dialog", { name: "会话列表" })).toBeInTheDocument();
+  expect(document.querySelector(".global-header")).toHaveAttribute("aria-hidden", "true");
+  expect(document.querySelector(".global-header")).toHaveAttribute("inert");
+  expect(document.querySelector(".side-nav")).toHaveAttribute("aria-hidden", "true");
+  expect(document.querySelector(".conversation-panel")).toHaveAttribute("inert");
+});

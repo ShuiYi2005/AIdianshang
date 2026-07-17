@@ -10,8 +10,8 @@ function formatAuditTime(value: string) {
   return new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", month: "numeric", day: "numeric" }).format(new Date(value));
 }
 
-export function EvidencePanel({ detail, mobileOpen = false, onClose }: { detail: HandoffDetail | null; mobileOpen?: boolean; onClose?: () => void }) {
-  const panelProps = mobileOpen ? { role: "dialog" as const, "aria-modal": true, "aria-label": "客户信息" } : { "aria-label": "客户与证据面板" };
+export function EvidencePanel({ detail, mobileOpen = false, backgroundHidden = false, onClose }: { detail: HandoffDetail | null; mobileOpen?: boolean; backgroundHidden?: boolean; onClose?: () => void }) {
+  const panelProps = mobileOpen ? { role: "dialog" as const, "aria-modal": true, "aria-label": "客户信息" } : { "aria-hidden": backgroundHidden || undefined, "aria-label": "客户与证据面板" };
   const closeControl = mobileOpen ? <button className="drawer-close" aria-label="关闭客户信息" onClick={onClose}>关闭</button> : null;
 
   if (!detail) {

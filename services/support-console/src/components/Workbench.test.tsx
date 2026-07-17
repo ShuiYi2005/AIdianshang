@@ -29,11 +29,17 @@ const detail = {
   audit_actions: [],
 };
 
+function deferred<T>() {
+  let resolve: (value: T) => void = () => undefined;
+  const promise = new Promise<T>((next) => { resolve = next; });
+  return { promise, resolve };
+}
+
 it("sends a human reply and renders simulated delivery status", async () => {
   const user = userEvent.setup();
   const api = {
     listQueue: vi.fn().mockResolvedValue({ items: [handoff] }),
-    getHandoff: vi.fn().mockResolvedValue(detail),
+    getHandoff: vi.fn().mockResolvedValueOnce(detail).mockResolvedValue({ ...detail, handoff: { ...handoff, status: "assigned" } }),
     claim: vi.fn().mockResolvedValue({ handoff: { ...handoff, status: "assigned" } }),
     reply: vi.fn().mockResolvedValue({
       message: { id: "message-3", sender_type: "human", content: "We are reviewing it now.", created_at: "2026-07-15T11:01:00Z", metadata: {} },
@@ -61,10 +67,7 @@ it("keeps a claimed conversation active in the assigned queue", async () => {
     listQueue: vi.fn()
       .mockResolvedValueOnce({ items: [handoff] })
       .mockImplementation((status) => Promise.resolve({ items: status === "assigned" ? [assignedHandoff] : [otherPendingHandoff] })),
-    getHandoff: vi.fn().mockImplementation((handoffId) => Promise.resolve({
-      ...detail,
-      handoff: handoffId === handoff.id ? handoff : otherPendingHandoff,
-    })),
+    getHandoff: vi.fn().mockResolvedValueOnce(detail).mockResolvedValue({ ...detail, handoff: assignedHandoff }),
     claim: vi.fn().mockResolvedValue({ handoff: assignedHandoff }),
     reply: vi.fn(),
     createTicket: vi.fn(),
@@ -88,10 +91,7 @@ it("keeps a resolved conversation visible in the resolved queue", async () => {
     listQueue: vi.fn()
       .mockResolvedValueOnce({ items: [assignedHandoff] })
       .mockImplementation((status) => Promise.resolve({ items: status === "resolved" ? [resolvedHandoff] : [otherPendingHandoff] })),
-    getHandoff: vi.fn().mockImplementation((handoffId) => Promise.resolve({
-      ...detail,
-      handoff: handoffId === handoff.id ? assignedHandoff : otherPendingHandoff,
-    })),
+    getHandoff: vi.fn().mockResolvedValueOnce({ ...detail, handoff: assignedHandoff }).mockResolvedValue({ ...detail, handoff: resolvedHandoff }),
     claim: vi.fn(),
     reply: vi.fn(),
     createTicket: vi.fn(),
@@ -154,4 +154,92 @@ it("renders audit records in the evidence panel so long context remains locally 
   const evidencePanel = await screen.findByLabelText("客户与证据面板");
   expect(within(evidencePanel).getByText("最近操作")).toBeInTheDocument();
   expect(within(evidencePanel).getAllByText("已模拟发送")).toHaveLength(3);
+});
+
+it("refreshes the evidence timeline after a successful customer reply", async () => {
+  const user = userEvent.setup();
+  const assignedHandoff = { ...handoff, status: "assigned" as const };
+  const replyMessage = { id: "message-3", sender_type: "human" as const, content: "We are reviewing it now.", created_at: "2026-07-15T11:01:00Z", metadata: {} };
+  const refreshedDetail = {
+    ...detail,
+    handoff: assignedHandoff,
+    messages: [...detail.messages, replyMessage],
+    audit_actions: [{ id: "audit-reply", actor_role: "support_agent", action: "simulated_reply_sent", target_type: "handoff", target_id: handoff.id, trace_id: null, details: {}, created_at: "2026-07-15T11:01:00Z" }],
+  };
+  const api = {
+    listQueue: vi.fn().mockResolvedValue({ items: [assignedHandoff] }),
+    getHandoff: vi.fn().mockResolvedValueOnce({ ...detail, handoff: assignedHandoff }).mockResolvedValueOnce(refreshedDetail),
+    claim: vi.fn(),
+    reply: vi.fn().mockResolvedValue({ message: replyMessage, delivery_status: "simulated_sent" }),
+    createTicket: vi.fn(),
+    resolve: vi.fn(),
+  };
+  render(<Workbench api={api} />);
+
+  await screen.findByText("顾客 3028");
+  await user.type(screen.getByLabelText("人工回复"), "We are reviewing it now.");
+  await user.click(screen.getByRole("button", { name: "发送回复" }));
+
+  await waitFor(() => expect(api.getHandoff).toHaveBeenCalledTimes(2));
+  expect(await within(screen.getByLabelText("客户与证据面板")).findByText("已模拟发送")).toBeInTheDocument();
+});
+
+it("keeps the newest detail when asynchronous audit refreshes resolve out of order", async () => {
+  const user = userEvent.setup();
+  const assignedHandoff = { ...handoff, status: "assigned" as const };
+  const firstReply = { id: "message-first", sender_type: "human" as const, content: "First reply", created_at: "2026-07-15T11:01:00Z", metadata: {} };
+  const secondReply = { id: "message-second", sender_type: "human" as const, content: "Second reply", created_at: "2026-07-15T11:02:00Z", metadata: {} };
+  const staleDetail = { ...detail, handoff: assignedHandoff, messages: [...detail.messages, firstReply], audit_actions: [{ id: "audit-old", actor_role: "support_agent", action: "older_action", target_type: "handoff", target_id: handoff.id, trace_id: null, details: {}, created_at: firstReply.created_at }] };
+  const latestDetail = { ...detail, handoff: assignedHandoff, messages: [...detail.messages, firstReply, secondReply], audit_actions: [{ id: "audit-new", actor_role: "support_agent", action: "latest_action", target_type: "handoff", target_id: handoff.id, trace_id: null, details: {}, created_at: secondReply.created_at }] };
+  const staleRefresh = deferred<typeof staleDetail>();
+  const latestRefresh = deferred<typeof latestDetail>();
+  const api = {
+    listQueue: vi.fn().mockResolvedValue({ items: [assignedHandoff] }),
+    getHandoff: vi.fn().mockResolvedValueOnce({ ...detail, handoff: assignedHandoff }).mockReturnValueOnce(staleRefresh.promise).mockReturnValueOnce(latestRefresh.promise),
+    claim: vi.fn(),
+    reply: vi.fn().mockResolvedValueOnce({ message: firstReply, delivery_status: "simulated_sent" }).mockResolvedValueOnce({ message: secondReply, delivery_status: "simulated_sent" }),
+    createTicket: vi.fn(),
+    resolve: vi.fn(),
+  };
+  render(<Workbench api={api} />);
+
+  await screen.findByText("顾客 3028");
+  const replyBox = screen.getByLabelText("人工回复");
+  await user.type(replyBox, firstReply.content);
+  await user.click(screen.getByRole("button", { name: "发送回复" }));
+  await waitFor(() => expect(api.getHandoff).toHaveBeenCalledTimes(2));
+  await user.type(replyBox, secondReply.content);
+  await user.click(screen.getByRole("button", { name: "发送回复" }));
+  await waitFor(() => expect(api.getHandoff).toHaveBeenCalledTimes(3));
+
+  latestRefresh.resolve(latestDetail);
+  expect(await within(screen.getByLabelText("客户与证据面板")).findByText("latest_action")).toBeInTheDocument();
+  staleRefresh.resolve(staleDetail);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  expect(within(screen.getByLabelText("客户与证据面板")).queryByText("older_action")).not.toBeInTheDocument();
+  expect(within(screen.getByLabelText("客户与证据面板")).getByText("latest_action")).toBeInTheDocument();
+});
+
+it("moves focus into a mobile drawer and restores it after Escape closes the drawer", async () => {
+  const user = userEvent.setup();
+  const api = {
+    listQueue: vi.fn().mockResolvedValue({ items: [handoff] }),
+    getHandoff: vi.fn().mockResolvedValue(detail),
+    claim: vi.fn(),
+    reply: vi.fn(),
+    createTicket: vi.fn(),
+    resolve: vi.fn(),
+  };
+  render(<Workbench api={api} />);
+
+  await screen.findByText("顾客 3028");
+  const openQueue = screen.getByRole("button", { name: "会话列表" });
+  await user.click(openQueue);
+  const closeQueue = screen.getByRole("button", { name: "关闭会话列表" });
+  await waitFor(() => expect(closeQueue).toHaveFocus());
+  await user.keyboard("{Escape}");
+
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "会话列表" })).not.toBeInTheDocument());
+  expect(openQueue).toHaveFocus();
 });
