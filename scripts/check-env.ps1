@@ -48,7 +48,7 @@ if ($difyEnabled) {
     }
 }
 
-$weakValues = @("change-me", "replace-with-secret-manager-value", "password", "secret")
+$weakValues = @("change-me", "replace-with-secret-manager-value", "replace-with-target-machine-secret", "password", "secret")
 if ($values["APP_ENV"] -in @("staging", "prod")) {
     foreach ($key in $required) {
         if ($weakValues -contains $values[$key]) {

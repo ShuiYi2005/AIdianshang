@@ -1,5 +1,6 @@
 param(
-    [string]$ComposeFile = "deployment/docker-compose.yml"
+    [string]$ComposeFile = "deployment/docker-compose.yml",
+    [string]$EnvFile = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -15,12 +16,13 @@ function Assert-Contains {
     }
 }
 
-docker compose -f $ComposeFile config --services | Select-String -SimpleMatch "business-db" | Out-Null
+$composeArgs = if ($EnvFile) { @("--env-file", $EnvFile) } else { @() }
+docker compose @composeArgs -f $ComposeFile config --services | Select-String -SimpleMatch "business-db" | Out-Null
 if ($LASTEXITCODE -ne 0) {
     throw "business-db service is not defined in $ComposeFile"
 }
 
-docker compose -f $ComposeFile up -d business-db | Out-Null
+docker compose @composeArgs -f $ComposeFile up -d business-db | Out-Null
 
 $deadline = (Get-Date).AddSeconds(60)
 do {

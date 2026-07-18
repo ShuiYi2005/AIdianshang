@@ -9,6 +9,9 @@ backups/
 
 # Offline release bundles contain multi-gigabyte Docker image archives.
 # Keep manifests and reproducible scripts in Git; keep image tarballs outside it.
+releases/*/
+!releases/latest/
+!releases/latest/**/
 releases/**/images/
 
 # Python
@@ -17,6 +20,15 @@ __pycache__/
 
 # Git worktrees
 .worktrees/
+services/agent-service/training-assets/
+services/support-console/node_modules/
+services/support-console/dist/
+services/support-console/*.tsbuildinfo
+services/support-console/vite.config.js
+services/support-console/vite.config.d.ts
+
+# Local visual QA captures (the signed-off report is versioned).
+docs/design-qa-*.png
 
 # OS/editor
 .DS_Store

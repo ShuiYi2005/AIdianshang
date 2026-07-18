@@ -33,16 +33,18 @@
 本地运行使用：
 
 ```powershell
-docker compose --env-file deployment/env/local.env -f deployment/docker-compose.yml up -d
+powershell -ExecutionPolicy Bypass -File scripts/start-local.ps1
 ```
 
-兼容旧方式：
+该命令是 GitHub 新克隆仓库的唯一推荐入口：当 `deployment/env/local.env` 不存在时会从模板生成随机本地密钥；已有环境文件绝不会被覆盖。它会在启动 API 与前端前完成业务数据库迁移。
+
+仅用于已初始化环境的排障方式：
 
 ```powershell
 docker compose -f deployment/docker-compose.yml up -d
 ```
 
-旧方式会读取 `deployment/.env`，后续应迁移到 `deployment/env/local.env`。
+直接 Compose 启动不会自动执行增量迁移；请优先使用 `scripts/start-local.ps1`。
 
 ## 环境变量分类
 

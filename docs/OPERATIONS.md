@@ -3,8 +3,10 @@
 ## 本地启动
 
 ```powershell
-docker compose --env-file deployment/env/local.env -f deployment/docker-compose.yml up -d
+powershell -ExecutionPolicy Bypass -File scripts/start-local.ps1
 ```
+
+首次联网启动会拉取固定版本的第三方镜像，并从仓库构建 `db-simulator`、`agent-service` 和 `support-console`。离线机器必须使用包含镜像归档的发布包，不应直接执行此命令。
 
 ## 全量验证
 

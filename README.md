@@ -7,8 +7,12 @@
 推荐使用显式本地环境文件：
 
 ```powershell
-docker compose --env-file deployment/env/local.env -f deployment/docker-compose.yml up -d
+powershell -ExecutionPolicy Bypass -File scripts/start-local.ps1
 ```
+
+在全新电脑上，先安装并启动 Docker Desktop、克隆仓库，然后在仓库根目录执行上述命令。脚本会从受版本控制的 `deployment/env/local.env.example` 生成被 Git 忽略的 `deployment/env/local.env`，先迁移业务数据库，再构建本项目服务并启动完整栈。首次启动需要访问 Docker Hub 与 npm/PyPI。
+
+离线部署不使用此命令：发布方执行 `scripts/package-release.ps1` 生成镜像包，目标机器在编辑发布环境密钥后执行 `scripts/install-release.ps1`。
 
 ## 验证
 
@@ -40,7 +44,12 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1 -EnvFile deployment/
 - n8n：`http://localhost:5678`
 - db-simulator：`http://localhost:8001`
 - agent-service：`http://localhost:8010`
+- AI 客服运营台：`http://localhost:4173`
 - Business PostgreSQL：`localhost:5433`
+
+## AI 客服运营台
+
+`http://localhost:4173` 提供客服工作台与 AI 训练中心。当前未接入真实电商后台：人工回复会明确标记为“模拟渠道已发送”，但会真实写入会话、工单与审计；训练主题可上传受限素材、预览、发布不可变版本并回滚。退款、赔偿、投诉、身份核验等高风险请求始终转人工。
 
 ## 产品化验证
 

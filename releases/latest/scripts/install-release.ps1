@@ -32,7 +32,12 @@ if (!(Test-Path -LiteralPath $envPath)) {
 Push-Location $ReleaseDir
 try {
     powershell -ExecutionPolicy Bypass -File scripts/check-env.ps1 -EnvFile $EnvFile
+    docker compose --env-file $EnvFile -f deployment/docker-compose.yml -f deployment/docker-compose.release.yml up -d business-db
+    if ($LASTEXITCODE -ne 0) { throw "Unable to start business-db from the release package" }
+    powershell -ExecutionPolicy Bypass -File scripts/apply-business-migrations.ps1 -EnvFile $EnvFile -ComposeFile deployment/docker-compose.yml
+    if ($LASTEXITCODE -ne 0) { throw "Unable to apply business database migrations from the release package" }
     docker compose --env-file $EnvFile -f deployment/docker-compose.yml -f deployment/docker-compose.release.yml up -d
+    if ($LASTEXITCODE -ne 0) { throw "Unable to start the release application stack" }
     if (!$SkipVerify) {
         powershell -ExecutionPolicy Bypass -File scripts/verify.ps1 -EnvFile $EnvFile -ComposeFile deployment/docker-compose.yml
     }

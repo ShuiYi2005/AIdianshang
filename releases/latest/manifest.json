@@ -1,6 +1,6 @@
 ﻿{
-    "version":  "20260703-local-closure",
-    "createdAt":  "2026-07-03T15:32:22.2462784+08:00",
+    "version":  "20260718-docker-reproducible",
+    "createdAt":  "2026-07-18T16:30:01.1676807+08:00",
     "composeFiles":  [
                          "deployment/docker-compose.yml",
                          "deployment/docker-compose.release.yml"
@@ -46,16 +46,29 @@
                        "archive":  "images/langgenius_dify-plugin-daemon_0.6.1-local.tar"
                    },
                    {
-                       "name":  "n8nio/n8n:latest",
-                       "archive":  "images/n8nio_n8n_latest.tar"
+                       "name":  "n8nio/n8n:2.22.5",
+                       "archive":  "images/n8nio_n8n_2.22.5.tar"
                    },
                    {
-                       "name":  "ai20-db-simulator:20260703-local-closure",
-                       "archive":  "images/ai20-db-simulator_20260703-local-closure.tar"
+                       "archive":  "images/ai20-db-simulator_20260718-docker-reproducible.tar",
+                       "name":  "ai20-db-simulator:20260718-docker-reproducible",
+                       "aliases":  [
+                                       "ai20-db-simulator:latest"
+                                   ]
                    },
                    {
-                       "name":  "ai20-agent-service:20260703-local-closure",
-                       "archive":  "images/ai20-agent-service_20260703-local-closure.tar"
+                       "archive":  "images/ai20-agent-service_20260718-docker-reproducible.tar",
+                       "name":  "ai20-agent-service:20260718-docker-reproducible",
+                       "aliases":  [
+                                       "ai20-agent-service:latest"
+                                   ]
+                   },
+                   {
+                       "archive":  "images/ai20-support-console_20260718-docker-reproducible.tar",
+                       "name":  "ai20-support-console:20260718-docker-reproducible",
+                       "aliases":  [
+                                       "ai20-support-console:latest"
+                                   ]
                    }
                ]
 }

@@ -15,6 +15,7 @@ $requiredPaths = @(
     "docs/INDUSTRY_STANDARD_TARGET_ARCHITECTURE.md",
     "docs/PRODUCTION_READINESS_DESIGN.md",
     "docs/PRODUCTIZATION_EXECUTION_PLAN.md",
+    "docs/DIFY_N8N_LIVE_CLOSURE.md",
     "evaluations/customer-service-smoke.json",
     "specs/services/agent-service.yaml",
     "specs/services/api-management.yaml",
@@ -29,7 +30,11 @@ $requiredPaths = @(
     "specs/tools/tool-resilience.yaml",
     "specs/operations/sync-and-release.yaml",
     "specs/support/agent-workbench.yaml",
-    "dify-assets/README.md"
+    "dify-assets/README.md",
+    "dify-assets/apps/ai20-customer-service-chatflow.md",
+    "dify-assets/tools/db-simulator.openapi.yaml",
+    "dify-assets/tools/agent-service-rag.openapi.yaml",
+    "prompts/support/dify-chatflow-system.md"
 )
 
 foreach ($path in $requiredPaths) {
@@ -46,6 +51,13 @@ if ($handoff -notmatch "human_handoff") {
 $systemPrompt = Get-Content -Raw -LiteralPath "prompts/support/customer-service-system.md"
 if ($systemPrompt -notmatch "NO_FABRICATION") {
     throw "customer-service-system.md must include no-fabrication policy marker"
+}
+
+$difyPrompt = Get-Content -Raw -LiteralPath "prompts/support/dify-chatflow-system.md"
+foreach ($marker in @("NO_FABRICATION", "handoff_required", "used_tool", "used_knowledge")) {
+    if ($difyPrompt -notmatch $marker) {
+        throw "dify-chatflow-system.md must include $marker"
+    }
 }
 
 "OK repository assets verified"

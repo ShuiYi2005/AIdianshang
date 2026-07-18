@@ -1,11 +1,24 @@
 param(
     [string]$ComposeFile = "deployment/docker-compose.yml",
-    [string]$MigrationsDir = "deployment/business-db/migrations"
+    [string]$MigrationsDir = "deployment/business-db/migrations",
+    [string]$EnvFile = ""
 )
 
 $ErrorActionPreference = "Stop"
 
-docker compose -f $ComposeFile up -d business-db | Out-Null
+function Start-BusinessDatabase {
+    if ($EnvFile) {
+        & docker compose --env-file $EnvFile -f $ComposeFile up -d business-db 1>$null
+    } else {
+        & docker compose -f $ComposeFile up -d business-db 1>$null
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to start business-db with Docker Compose"
+    }
+}
+
+Start-BusinessDatabase
 
 $deadline = (Get-Date).AddSeconds(60)
 do {

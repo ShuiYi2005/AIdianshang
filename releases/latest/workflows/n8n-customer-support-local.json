@@ -1,4 +1,5 @@
 {
+  "id": "4e7e37ac-129c-46f9-8ed3-8effe5d5a112",
   "name": "AI20 Local Customer Support",
   "nodes": [
     {
@@ -8,6 +9,7 @@
         "responseMode": "responseNode"
       },
       "id": "webhook-local-customer-support",
+      "webhookId": "884557b7-4931-44f6-badc-e0d7325f20ab",
       "name": "Customer Message Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -22,17 +24,17 @@
           "parameters": [
             {
               "name": "X-Trace-Id",
-              "value": "={{$json.trace_id || $execution.id}}"
+              "value": "={{$json.body.trace_id || $execution.id}}"
             },
             {
               "name": "X-Idempotency-Key",
-              "value": "={{$json.idempotency_key || $execution.id}}"
+              "value": "={{$json.body.idempotency_key || $execution.id}}"
             }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"conversation_id\": $json.conversation_id || \"n8n-local-conversation\", \"platform\": $json.platform || \"n8n-local\", \"customer_id\": $json.customer_id || \"n8n-local-customer\", \"user_message\": $json.user_message || $json.message || \"\", \"role\": $json.role || \"support_agent\"}"
+        "jsonBody": "={{ { conversation_id: $json.body.conversation_id || 'n8n-local-conversation', platform: $json.body.platform || 'n8n-local', customer_id: $json.body.customer_id || 'n8n-local-customer', user_message: $json.body.user_message || $json.body.message || '', role: $json.body.role || 'support_agent' } }}"
       },
       "id": "call-agent-service",
       "name": "Call Agent Service",
@@ -76,7 +78,7 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
