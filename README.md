@@ -7,8 +7,12 @@
 推荐使用显式本地环境文件：
 
 ```powershell
-docker compose --env-file deployment/env/local.env -f deployment/docker-compose.yml up -d
+powershell -ExecutionPolicy Bypass -File scripts/start-local.ps1
 ```
+
+在全新电脑上，先安装并启动 Docker Desktop、克隆仓库，然后在仓库根目录执行上述命令。脚本会从受版本控制的 `deployment/env/local.env.example` 生成被 Git 忽略的 `deployment/env/local.env`，先迁移业务数据库，再构建本项目服务并启动完整栈。首次启动需要访问 Docker Hub 与 npm/PyPI。
+
+离线部署不使用此命令：发布方执行 `scripts/package-release.ps1` 生成镜像包，目标机器在编辑发布环境密钥后执行 `scripts/install-release.ps1`。
 
 ## 验证
 

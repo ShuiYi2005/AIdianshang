@@ -9,6 +9,9 @@ backups/
 
 # Offline release bundles contain multi-gigabyte Docker image archives.
 # Keep manifests and reproducible scripts in Git; keep image tarballs outside it.
+releases/*/
+!releases/latest/
+!releases/latest/**/
 releases/**/images/
 
 # Python

@@ -37,3 +37,8 @@ services:
     image: ${AGENT_SERVICE_IMAGE:-ai20-agent-service:latest}
     pull_policy: never
     build: null
+
+  support-console:
+    image: ${SUPPORT_CONSOLE_IMAGE:-ai20-support-console:latest}
+    pull_policy: never
+    build: null

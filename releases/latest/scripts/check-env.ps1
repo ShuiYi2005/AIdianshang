@@ -39,12 +39,24 @@ foreach ($key in $required) {
     }
 }
 
-$weakValues = @("change-me", "replace-with-secret-manager-value", "password", "secret")
+$difyEnabled = $values.ContainsKey("DIFY_APP_ENABLED") -and $values["DIFY_APP_ENABLED"].ToLowerInvariant() -in @("1", "true", "yes", "on")
+if ($difyEnabled) {
+    foreach ($key in @("DIFY_APP_API_URL", "DIFY_APP_API_KEY", "DIFY_APP_TIMEOUT_SECONDS")) {
+        if (!$values.ContainsKey($key) -or [string]::IsNullOrWhiteSpace($values[$key])) {
+            throw "Missing required Dify app env var when DIFY_APP_ENABLED=true: $key"
+        }
+    }
+}
+
+$weakValues = @("change-me", "replace-with-secret-manager-value", "replace-with-target-machine-secret", "password", "secret")
 if ($values["APP_ENV"] -in @("staging", "prod")) {
     foreach ($key in $required) {
         if ($weakValues -contains $values[$key]) {
             throw "Weak placeholder value is not allowed for $($values["APP_ENV"]): $key"
         }
+    }
+    if ($difyEnabled -and $weakValues -contains $values["DIFY_APP_API_KEY"]) {
+        throw "Weak placeholder value is not allowed for $($values["APP_ENV"]): DIFY_APP_API_KEY"
     }
 }
 

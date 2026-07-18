@@ -1,11 +1,12 @@
 param(
     [string]$EvalFile = "evaluations/customer-service-smoke.json",
-    [string]$ComposeFile = "deployment/docker-compose.yml"
+    [string]$ComposeFile = "deployment/docker-compose.yml",
+    [string]$EnvFile = ""
 )
 
 $ErrorActionPreference = "Stop"
 
-$result = powershell -ExecutionPolicy Bypass -File scripts/run-evaluations.ps1 -EvalFile $EvalFile -ComposeFile $ComposeFile
+$result = powershell -ExecutionPolicy Bypass -File scripts/run-evaluations.ps1 -EvalFile $EvalFile -ComposeFile $ComposeFile -EnvFile $EnvFile
 if ($result -notmatch "OK evaluations completed") {
     throw "evaluation runner did not complete"
 }

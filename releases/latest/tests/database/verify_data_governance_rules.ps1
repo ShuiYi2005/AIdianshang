@@ -1,10 +1,12 @@
 param(
-    [string]$ComposeFile = "deployment/docker-compose.yml"
+    [string]$ComposeFile = "deployment/docker-compose.yml",
+    [string]$EnvFile = ""
 )
 
 $ErrorActionPreference = "Stop"
 
-docker compose -f $ComposeFile up -d business-db | Out-Null
+$composeArgs = if ($EnvFile) { @("--env-file", $EnvFile) } else { @() }
+docker compose @composeArgs -f $ComposeFile up -d business-db | Out-Null
 
 $deadline = (Get-Date).AddSeconds(60)
 do {

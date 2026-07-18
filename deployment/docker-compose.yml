@@ -79,7 +79,6 @@ services:
 
   dify-api:
     image: langgenius/dify-api:1.14.2
-    pull_policy: never
     restart: always
     networks:
       - app-network
@@ -126,7 +125,6 @@ services:
       - "5001:5001"
   dify-worker:
     image: langgenius/dify-api:1.14.2
-    pull_policy: never
     restart: always
     networks:
       - app-network
@@ -170,7 +168,6 @@ services:
 
   dify-web:
     image: langgenius/dify-web:1.14.2
-    pull_policy: never
     restart: always
     networks:
       - app-network
@@ -185,7 +182,7 @@ services:
       - "8080:3000"
 
   n8n:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n:2.22.5
     restart: always
     networks:
       - app-network
@@ -203,7 +200,6 @@ services:
 
   plugin-daemon:
     image: langgenius/dify-plugin-daemon:0.6.1-local
-    pull_policy: never
     restart: always
     networks:
       - app-network
@@ -239,7 +235,7 @@ services:
       context: ../services/db-simulator
       dockerfile: Dockerfile
       args:
-        BASE_IMAGE: ${DB_SIMULATOR_BASE_IMAGE:-python:3.12-slim}
+        BASE_IMAGE: ${DB_SIMULATOR_BASE_IMAGE:-python:3.12.11-slim}
     image: ai20-db-simulator:latest
     pull_policy: never
     restart: always
@@ -263,7 +259,7 @@ services:
       context: ../services/agent-service
       dockerfile: Dockerfile
       args:
-        BASE_IMAGE: ${AGENT_SERVICE_BASE_IMAGE:-python:3.12-slim}
+        BASE_IMAGE: ${AGENT_SERVICE_BASE_IMAGE:-python:3.12.11-slim}
     image: ai20-agent-service:latest
     pull_policy: never
     restart: always

@@ -10,6 +10,7 @@ volumes:
   redis_data:
   weaviate_data:
   n8n_data:
+  training_assets:
 
 services:
 
@@ -78,7 +79,6 @@ services:
 
   dify-api:
     image: langgenius/dify-api:1.14.2
-    pull_policy: never
     restart: always
     networks:
       - app-network
@@ -109,6 +109,11 @@ services:
       WEAVIATE_SCHEME: http
       VECTOR_STORE: weaviate
       VECTOR_STORE_TYPE: weaviate
+      PLUGIN_DAEMON_URL: http://plugin-daemon:5002
+      PLUGIN_DAEMON_KEY: ${PLUGIN_SERVER_KEY}
+      INNER_API_KEY_FOR_PLUGIN: ${DIFY_INNER_API_KEY}
+      PLUGIN_REMOTE_INSTALL_HOST: plugin-daemon
+      PLUGIN_REMOTE_INSTALL_PORT: 5004
       CONSOLE_CORS_ALLOW_ORIGINS: "*"
       WEB_API_CORS_ALLOW_ORIGINS: "*"
       OPENDAL_SCHEME: fs
@@ -120,7 +125,6 @@ services:
       - "5001:5001"
   dify-worker:
     image: langgenius/dify-api:1.14.2
-    pull_policy: never
     restart: always
     networks:
       - app-network
@@ -151,6 +155,11 @@ services:
       WEAVIATE_SCHEME: http
       VECTOR_STORE: weaviate
       VECTOR_STORE_TYPE: weaviate
+      PLUGIN_DAEMON_URL: http://plugin-daemon:5002
+      PLUGIN_DAEMON_KEY: ${PLUGIN_SERVER_KEY}
+      INNER_API_KEY_FOR_PLUGIN: ${DIFY_INNER_API_KEY}
+      PLUGIN_REMOTE_INSTALL_HOST: plugin-daemon
+      PLUGIN_REMOTE_INSTALL_PORT: 5004
       OPENDAL_SCHEME: fs
       OPENDAL_FS_ROOT: /app/api/storage
       CELERY_BROKER_URL: redis://redis:6379/1
@@ -159,7 +168,6 @@ services:
 
   dify-web:
     image: langgenius/dify-web:1.14.2
-    pull_policy: never
     restart: always
     networks:
       - app-network
@@ -174,7 +182,7 @@ services:
       - "8080:3000"
 
   n8n:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n:2.22.5
     restart: always
     networks:
       - app-network
@@ -192,7 +200,6 @@ services:
 
   plugin-daemon:
     image: langgenius/dify-plugin-daemon:0.6.1-local
-    pull_policy: never
     restart: always
     networks:
       - app-network
@@ -228,7 +235,7 @@ services:
       context: ../services/db-simulator
       dockerfile: Dockerfile
       args:
-        BASE_IMAGE: ${DB_SIMULATOR_BASE_IMAGE:-python:3.12-slim}
+        BASE_IMAGE: ${DB_SIMULATOR_BASE_IMAGE:-python:3.12.11-slim}
     image: ai20-db-simulator:latest
     pull_policy: never
     restart: always
@@ -252,7 +259,7 @@ services:
       context: ../services/agent-service
       dockerfile: Dockerfile
       args:
-        BASE_IMAGE: ${AGENT_SERVICE_BASE_IMAGE:-python:3.12-slim}
+        BASE_IMAGE: ${AGENT_SERVICE_BASE_IMAGE:-python:3.12.11-slim}
     image: ai20-agent-service:latest
     pull_policy: never
     restart: always
@@ -263,15 +270,44 @@ services:
         condition: service_healthy
       db-simulator:
         condition: service_healthy
+      dify-api:
+        condition: service_started
     environment:
       BUSINESS_DATABASE_URL: postgresql://${BUSINESS_DB_USER}:${BUSINESS_DB_PASSWORD}@business-db:5432/${BUSINESS_DB_NAME}
       DB_SIMULATOR_URL: http://db-simulator:8000
+      DIFY_APP_ENABLED: ${DIFY_APP_ENABLED:-false}
+      DIFY_APP_API_URL: ${DIFY_APP_API_URL:-http://dify-api:5001/v1/chat-messages}
+      DIFY_APP_API_KEY: ${DIFY_APP_API_KEY:-}
+      DIFY_APP_TIMEOUT_SECONDS: ${DIFY_APP_TIMEOUT_SECONDS:-15}
     volumes:
       - ../knowledge:/app/knowledge:ro
+      - training_assets:/app/training-assets
     ports:
       - "8010:8010"
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/health', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  support-console:
+    build:
+      context: ../services/support-console
+      dockerfile: Dockerfile
+    image: ai20-support-console:latest
+    pull_policy: never
+    restart: always
+    networks:
+      - app-network
+    depends_on:
+      agent-service:
+        condition: service_healthy
+    environment:
+      VITE_AGENT_API_BASE_URL: http://localhost:8010
+    ports:
+      - "4173:4173"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:4173').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
       interval: 10s
       timeout: 5s
       retries: 5

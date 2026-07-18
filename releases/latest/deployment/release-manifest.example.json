@@ -15,8 +15,9 @@
     {"name": "langgenius/dify-api:1.14.2", "archive": "images/langgenius_dify-api_1.14.2.tar"},
     {"name": "langgenius/dify-web:1.14.2", "archive": "images/langgenius_dify-web_1.14.2.tar"},
     {"name": "langgenius/dify-plugin-daemon:0.6.1-local", "archive": "images/langgenius_dify-plugin-daemon_0.6.1-local.tar"},
-    {"name": "n8nio/n8n:latest", "archive": "images/n8nio_n8n_latest.tar"},
+    {"name": "n8nio/n8n:2.22.5", "archive": "images/n8nio_n8n_2.22.5.tar"},
     {"name": "ai20-db-simulator:latest", "archive": "images/ai20-db-simulator_latest.tar"},
-    {"name": "ai20-agent-service:latest", "archive": "images/ai20-agent-service_latest.tar"}
+    {"name": "ai20-agent-service:latest", "archive": "images/ai20-agent-service_latest.tar"},
+    {"name": "ai20-support-console:latest", "archive": "images/ai20-support-console_latest.tar"}
   ]
 }
