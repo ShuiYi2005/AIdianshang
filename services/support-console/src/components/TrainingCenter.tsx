@@ -1,8 +1,8 @@
 import { ArrowClockwiseIcon, FloppyDiskIcon, PaperclipIcon, PlayCircleIcon, PlusIcon, UploadSimpleIcon } from "@phosphor-icons/react";
-import { useEffect, useMemo, useState } from "react";
-import type { ConsoleApi, TrainingTopic, TrainingTopicDetail } from "../types";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ConsoleApi, RagStatus, TrainingTopic, TrainingTopicDetail } from "../types";
 
-type TrainingApi = Pick<ConsoleApi, "listTopics" | "getTopic" | "createTopic" | "updateTopic" | "uploadAsset" | "previewTopic" | "publishTopic" | "rollbackTopic">;
+type TrainingApi = Pick<ConsoleApi, "listTopics" | "getTopic" | "createTopic" | "updateTopic" | "uploadAsset" | "previewTopic" | "publishTopic" | "rollbackTopic" | "getRagStatus" | "reindexKnowledge">;
 
 const emptyForm = { name: "", triggerPhrases: "", replyText: "", storeScope: "simulated-store", productScope: "all-products", channel: "simulated-ecommerce" };
 
@@ -21,12 +21,28 @@ export function TrainingCenter({ api, onAuditChange }: { api: TrainingApi; onAud
   const versions = useMemo(() => detail?.versions.filter((version) => version.version !== detail.topic.current_version) ?? [], [detail]);
   const [rollbackVersion, setRollbackVersion] = useState<number | null>(null);
   const [topicDrawerOpen, setTopicDrawerOpen] = useState(false);
+  const [ragStatus, setRagStatus] = useState<RagStatus | null>(null);
+  const syncTimer = useRef<number | null>(null);
 
   const loadTopics = async () => {
     try { const result = await api.listTopics(); setTopics(result.items); }
     catch (reason) { setError(reason instanceof Error ? reason.message : "训练主题加载失败。"); }
   };
   useEffect(() => { void loadTopics(); }, []);
+  const loadRagStatus = async (): Promise<RagStatus | null> => {
+    try { const result = await api.getRagStatus(); setRagStatus(result); return result; }
+    catch (reason) { setError(reason instanceof Error ? reason.message : "知识库状态加载失败。"); return null; }
+  };
+  useEffect(() => { void loadRagStatus(); return () => { if (syncTimer.current !== null) window.clearInterval(syncTimer.current); }; }, []);
+
+  const syncKnowledge = async () => {
+    setBusy("rag-sync"); setError("");
+    try {
+      await api.reindexKnowledge();
+      setNotice("知识库正在同步，完成后会自动刷新状态。");
+      syncTimer.current = window.setInterval(() => { void loadRagStatus().then((status) => { if (status?.index_status === "ready" || status?.index_status === "failed" || status?.index_status === "degraded" || status?.index_status === "succeeded") { if (syncTimer.current !== null) window.clearInterval(syncTimer.current); setBusy(null); } }); }, 2000);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "知识库同步启动失败。"); setBusy(null); }
+  };
 
   const loadDetail = async (id: string) => {
     setError("");
@@ -97,6 +113,7 @@ export function TrainingCenter({ api, onAuditChange }: { api: TrainingApi; onAud
     <aside className={`topic-list-panel${topicDrawerOpen ? " is-mobile-open" : ""}`} role={topicDrawerOpen ? "dialog" : undefined} aria-modal={topicDrawerOpen || undefined} aria-label={topicDrawerOpen ? "主题列表" : undefined}>{topicDrawerOpen && <button className="drawer-close" aria-label="关闭主题列表" onClick={() => setTopicDrawerOpen(false)}>关闭</button>}<div className="panel-heading"><div><span className="eyebrow">训练资产</span><h2>主题库</h2></div><button className="icon-button" onClick={() => { newTopic(); setTopicDrawerOpen(false); }} aria-label="新建主题快捷入口"><PlusIcon weight="bold" /></button></div><button className="new-topic-button" onClick={() => { newTopic(); setTopicDrawerOpen(false); }}><PlusIcon weight="bold" />新建主题</button><div className="topic-list">{topics.map((topic) => <button key={topic.id} className={topic.id === selectedId ? "topic-item selected" : "topic-item"} onClick={() => { void loadDetail(topic.id); setTopicDrawerOpen(false); }}><span><strong>{topic.name}</strong><small>{topic.trigger_phrases.slice(0, 2).join(" · ")}</small></span><em className={`topic-status ${topic.status}`}>{topic.status === "published" ? `V${topic.current_version}` : "草稿"}</em></button>)}{!topics.length && <p className="empty-state">尚无训练主题，创建第一条店铺经验。</p>}</div></aside>
     <section className="training-editor"><header className="page-heading"><div><span className="eyebrow">可验证训练</span><h1>AI 训练中心</h1><p>把店铺经验变成可验证、可回滚的 AI 回复。</p></div><div className="training-header-actions"><button className="mobile-topic-toggle secondary-action" aria-expanded={topicDrawerOpen} onClick={() => setTopicDrawerOpen(true)}>主题列表</button><button className="secondary-action" disabled={!selectedId || busy === "preview"} onClick={() => void runPreview()}><PlayCircleIcon weight="fill" />快速预览</button><button className="primary-action" disabled={!selectedId || busy === "publish"} onClick={() => void publish()}><FloppyDiskIcon weight="fill" />发布训练</button></div></header>
       {error && <div className="notice error-notice" role="alert">{error}</div>}{notice && <div className="notice success-notice" role="status">{notice}</div>}
+      <section className="knowledge-sync-card" aria-label="知识库同步"><div><span className="eyebrow">语义检索</span><h2>知识库同步</h2><p>{ragStatus ? `${ragStatus.model_name} · ${ragStatus.mode} · ${ragStatus.document_count} 份文档 / ${ragStatus.chunk_count} 个切片` : "正在读取知识库状态…"}</p><small>{ragStatus ? `模型缓存：${ragStatus.model_cache_status}；向量库：${ragStatus.weaviate_status}；索引：${ragStatus.index_status}` : ""}</small>{ragStatus?.last_sync?.error_message && <small className="rag-error">{ragStatus.last_sync.error_message}</small>}</div><button className="secondary-action" disabled={busy === "rag-sync"} onClick={() => void syncKnowledge()}>{busy === "rag-sync" ? "正在同步" : "立即同步"}</button></section>
       <div className="editor-grid"><section className="editor-card"><h2>回复规则</h2><label>主题名称<input aria-label="主题名称" value={form.name} onChange={input("name")} placeholder="例如：物流催发" /></label><label>触发语<textarea aria-label="触发语" value={form.triggerPhrases} onChange={input("triggerPhrases")} placeholder="每行一条，例如：\n什么时候发货" /></label><label>标准回复<textarea aria-label="标准回复" className="reply-field" value={form.replyText} onChange={input("replyText")} placeholder="给客户的安全、可执行答复" /></label><div className="scope-grid"><label>店铺范围<input value={form.storeScope} onChange={input("storeScope")} /></label><label>商品范围<input value={form.productScope} onChange={input("productScope")} /></label><label>渠道<input value={form.channel} onChange={input("channel")} /></label></div><button className="primary-action" disabled={busy === "save"} onClick={() => void save()}><FloppyDiskIcon weight="fill" />保存主题</button></section>
       <section className="editor-card"><h2>素材与安全预览</h2><div className="upload-box"><UploadSimpleIcon weight="duotone" size={28} /><div><strong>上传训练素材</strong><p>支持 txt、md、png、jpg、webp、mp4，单个文件不超过 16 MB。</p></div><label className="file-picker"><PaperclipIcon weight="bold" />选择文件<input aria-label="选择训练素材" type="file" accept=".txt,.md,.png,.jpg,.jpeg,.webp,.mp4" onChange={(event) => setAssetFile(event.target.files?.[0] ?? null)} /></label><input value={assetDescription} onChange={(event) => setAssetDescription(event.target.value)} placeholder="素材说明（可选）" /><button className="secondary-action" disabled={!assetFile || busy === "upload"} onClick={() => void upload()}>上传素材</button></div>
         {detail?.assets.length ? <ul className="asset-list">{detail.assets.map((asset) => <li key={asset.id}><PaperclipIcon weight="fill" /><span><strong>{asset.filename}</strong><small>{asset.asset_type} · {Math.ceil(asset.byte_size / 1024)} KB</small></span></li>)}</ul> : <p className="muted-copy">素材会保存在 Docker 卷中，不进入代码仓库。</p>}

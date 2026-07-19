@@ -9,6 +9,8 @@ import type {
   TrainingTopic,
   TrainingTopicDetail,
   TrainingTopicInput,
+  RagStatus,
+  RagReindexResponse,
 } from "./types";
 
 const baseUrl = (import.meta.env.VITE_AGENT_API_BASE_URL ?? "http://localhost:8010").replace(/\/$/, "");
@@ -57,4 +59,6 @@ export const apiClient: ConsoleApi = {
   publishTopic: (id: string) => request<{ topic: TrainingTopic }>(`/api/training/topics/${encodeURIComponent(id)}/publish`, json()),
   rollbackTopic: (id: string, version: number) =>
     request<{ topic: TrainingTopic; restored_from_version: number }>(`/api/training/topics/${encodeURIComponent(id)}/rollback`, json({ version })),
+  getRagStatus: () => request<RagStatus>("/api/rag/status"),
+  reindexKnowledge: () => request<RagReindexResponse>("/api/rag/reindex", json()),
 };

@@ -14,3 +14,9 @@
 - [ ] Dify API 可访问
 - [ ] `db-simulator` 健康检查通过
 - [ ] worker 使用 Redis broker
+# 轻量向量 RAG 验收
+
+- [ ] `GET /api/rag/status` 显示模型缓存、Weaviate 和索引状态。
+- [ ] 训练中心“知识库同步”可启动同步、显示进行中、成功或失败状态，并可重试。
+- [ ] `POST /api/rag/search` 在索引成功后返回 `retrieval_mode=vector`、资料来源、版本与切片标识。
+- [ ] Weaviate 或模型不可用时，`hybrid` 返回 `keyword_fallback`；`vector` 不伪装关键词结果。

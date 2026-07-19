@@ -117,6 +117,19 @@ export interface TrainingPreview {
   reply: string;
 }
 
+export interface RagStatus {
+  mode: "hybrid" | "vector" | "keyword";
+  model_name: string;
+  model_cache_status: "missing" | "downloading" | "ready" | "failed";
+  weaviate_status: "ready" | "unavailable" | "unknown";
+  index_status: "idle" | "running" | "ready" | "failed" | "degraded" | "succeeded";
+  last_sync: { status: string; finished_at: string | null; error_message: string | null } | null;
+  document_count: number;
+  chunk_count: number;
+}
+
+export interface RagReindexResponse { sync_job_id: string; status: "running"; accepted: boolean; }
+
 export interface ConsoleApi {
   listQueue(status: QueueStatus): Promise<{ items: Handoff[] }>;
   getHandoff(id: string): Promise<HandoffDetail>;
@@ -132,4 +145,6 @@ export interface ConsoleApi {
   previewTopic(id: string, query: string): Promise<TrainingPreview>;
   publishTopic(id: string): Promise<{ topic: TrainingTopic }>;
   rollbackTopic(id: string, version: number): Promise<{ topic: TrainingTopic; restored_from_version: number }>;
+  getRagStatus(): Promise<RagStatus>;
+  reindexKnowledge(): Promise<RagReindexResponse>;
 }
