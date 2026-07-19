@@ -1,8 +1,16 @@
 param(
-    [string[]]$Paths = @("deployment/docker-compose.yml", "docs", "specs", "config", "scripts", "README.md", "AGENTS.md")
+    [string[]]$Paths = @("deployment", "docs", "specs", "config", "scripts", "README.md", "AGENTS.md")
 )
 
 $ErrorActionPreference = "Stop"
+
+# These are machine-local runtime credentials and are intentionally ignored by
+# Git. Scan the complete deployment tree, but never treat those local files as
+# release artifacts.
+$ignoredRuntimeFiles = @(
+    (Join-Path (Get-Location) "deployment\\.env"),
+    (Join-Path (Get-Location) "deployment\\env\\local.env")
+) | ForEach-Object { [System.IO.Path]::GetFullPath($_) }
 
 $knownSecrets = @(
     "dify_password_123",
@@ -25,7 +33,10 @@ foreach ($path in $Paths) {
         $files = @($item)
     }
     $selfPath = (Resolve-Path -LiteralPath $PSCommandPath).Path
-    $files = $files | Where-Object { (Resolve-Path -LiteralPath $_.FullName).Path -ne $selfPath }
+    $files = $files | Where-Object {
+        $resolvedPath = (Resolve-Path -LiteralPath $_.FullName).Path
+        $resolvedPath -ne $selfPath -and $resolvedPath -notin $ignoredRuntimeFiles
+    }
 
     foreach ($secret in $knownSecrets) {
         $matches = $files | Select-String -Pattern ([regex]::Escape($secret)) -ErrorAction SilentlyContinue

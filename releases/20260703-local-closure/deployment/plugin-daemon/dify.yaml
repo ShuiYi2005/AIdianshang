@@ -1,8 +1,10 @@
-server_key: sk-9f83b7c2e1d4a5b6c7d8e9f0a1b2c3d4
+# Reference-only plugin daemon configuration. Docker Compose injects runtime
+# values through deployment/env/local.env; never commit real credentials here.
+server_key: change-me
 dify_inner_api_url: http://dify-api:5001
-dify_inner_api_key: sk-9f83b7c2e1d4a5b6c7d8e9f0a1b2c3d4
+dify_inner_api_key: change-me
 db_username: postgres
-db_password: dify_password_123
+db_password: change-me
 db_host: db
 db_port: 5432
 db_database: dify
