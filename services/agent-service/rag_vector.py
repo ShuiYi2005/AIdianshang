@@ -49,6 +49,25 @@ class FastEmbedder:
         return vector
 
 
+class LazyFastEmbedder:
+    """Avoid model imports and downloads until indexing or retrieval is requested."""
+
+    def __init__(self, settings: RagSettings) -> None:
+        self._settings = settings
+        self._delegate: FastEmbedder | None = None
+
+    def _load(self) -> FastEmbedder:
+        if self._delegate is None:
+            self._delegate = FastEmbedder(self._settings)
+        return self._delegate
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self._load().embed_documents(texts)
+
+    def embed_query(self, query: str) -> list[float]:
+        return self._load().embed_query(query)
+
+
 class WeaviateKnowledgeStore:
     def __init__(self, base_url: str, timeout_seconds: float = 10.0) -> None:
         self._base_url = base_url.rstrip("/")

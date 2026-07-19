@@ -29,6 +29,8 @@ it("creates a topic and previews its protected reply", async () => {
     previewTopic: vi.fn().mockResolvedValue({ matched: false, handoff_required: true, reply: "需要人工客服核验后处理。" }),
     publishTopic: vi.fn(),
     rollbackTopic: vi.fn(),
+    getRagStatus: vi.fn().mockResolvedValue({ mode: "hybrid", model_name: "BAAI/bge-small-zh-v1.5", model_cache_status: "missing", weaviate_status: "unknown", index_status: "idle", last_sync: null, document_count: 0, chunk_count: 0 }),
+    reindexKnowledge: vi.fn(),
   };
   render(<TrainingCenter api={api} />);
 
@@ -55,6 +57,8 @@ it("opens and closes the training-topic drawer without leaving the editor", asyn
     previewTopic: vi.fn(),
     publishTopic: vi.fn(),
     rollbackTopic: vi.fn(),
+    getRagStatus: vi.fn().mockResolvedValue({ mode: "hybrid", model_name: "BAAI/bge-small-zh-v1.5", model_cache_status: "missing", weaviate_status: "unknown", index_status: "idle", last_sync: null, document_count: 0, chunk_count: 0 }),
+    reindexKnowledge: vi.fn(),
   };
   render(<TrainingCenter api={api} />);
 
@@ -63,4 +67,21 @@ it("opens and closes the training-topic drawer without leaving the editor", asyn
   await user.click(screen.getByRole("button", { name: "关闭主题列表" }));
   expect(screen.queryByRole("dialog", { name: "主题列表" })).not.toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "AI 训练中心" })).toBeVisible();
+});
+
+it("shows knowledge sync status and disables duplicate sync while a job is running", async () => {
+  const user = userEvent.setup();
+  const api = {
+    listTopics: vi.fn().mockResolvedValue({ items: [] }),
+    getTopic: vi.fn(), createTopic: vi.fn(), updateTopic: vi.fn(), uploadAsset: vi.fn(), previewTopic: vi.fn(), publishTopic: vi.fn(), rollbackTopic: vi.fn(),
+    getRagStatus: vi.fn().mockResolvedValue({ mode: "hybrid", model_name: "BAAI/bge-small-zh-v1.5", model_cache_status: "ready", weaviate_status: "ready", index_status: "ready", last_sync: null, document_count: 3, chunk_count: 8 }),
+    reindexKnowledge: vi.fn().mockResolvedValue({ sync_job_id: "job-1", status: "running", accepted: true }),
+  };
+  render(<TrainingCenter api={api} />);
+
+  expect(await screen.findByText("知识库同步")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "立即同步" }));
+
+  expect(api.reindexKnowledge).toHaveBeenCalledOnce();
+  expect(screen.getByRole("button", { name: "正在同步" })).toBeDisabled();
 });

@@ -18,6 +18,8 @@ const api = {
   previewTopic: vi.fn(),
   publishTopic: vi.fn(),
   rollbackTopic: vi.fn(),
+  getRagStatus: vi.fn().mockResolvedValue({ mode: "hybrid", model_name: "BAAI/bge-small-zh-v1.5", model_cache_status: "missing", weaviate_status: "unknown", index_status: "idle", last_sync: null, document_count: 0, chunk_count: 0 }),
+  reindexKnowledge: vi.fn(),
 };
 
 it("switches from the workbench to AI training", async () => {

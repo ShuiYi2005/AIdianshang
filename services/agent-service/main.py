@@ -10,13 +10,16 @@ import uuid
 from typing import Any
 
 import httpx
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from dify_client import DifyChatClient, DifyClientConfig, DifyClientError
 from masking import mask_address, mask_order, mask_phone
-from rag import search_knowledge
+from rag_repository import RagRepository
+from rag_service import RagDependencyError, RagService
+from rag_types import RagSettings
+from rag_vector import LazyFastEmbedder, WeaviateKnowledgeStore
 from repository import (
     enqueue_handoff,
     ensure_conversation,
@@ -39,6 +42,13 @@ from training_service import SENSITIVE_TERMS, preview_training
 
 
 DB_SIMULATOR_URL = os.getenv("DB_SIMULATOR_URL", "http://db-simulator:8000")
+rag_settings = RagSettings.from_environment()
+rag_service = RagService(
+    rag_settings,
+    LazyFastEmbedder(rag_settings),
+    WeaviateKnowledgeStore(rag_settings.weaviate_url),
+    RagRepository(),
+)
 
 app = FastAPI(title="agent-service", version="0.2.0")
 app.add_middleware(
@@ -168,11 +178,26 @@ async def rag_search(
     x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
 ) -> dict[str, Any]:
     trace_id = trace_from_header(x_trace_id)
-    results = search_knowledge(payload.query, payload.limit)
+    try:
+        result = rag_service.search(payload.query, payload.limit)
+    except (RagDependencyError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail="向量检索暂不可用") from exc
+    response = result.as_dict()
+    results = response["results"]
     rag_tokens = sum(len(item.get("excerpt", "").split()) for item in results)
     save_metric("rag.search.count", 1, {"result_count": len(results)}, trace_id)
     save_cost_event(trace_id, "rag.search", rag_tokens=rag_tokens)
-    return {"trace_id": trace_id, "results": results}
+    return {"trace_id": trace_id, **response}
+
+
+@app.get("/api/rag/status")
+async def rag_status() -> dict[str, Any]:
+    return rag_service.status()
+
+
+@app.post("/api/rag/reindex", status_code=202)
+async def rag_reindex() -> dict[str, Any]:
+    return rag_service.start_reindex()
 
 
 async def call_order_tool(order_id: str, trace_id: str) -> tuple[dict[str, Any], int, str]:
@@ -206,7 +231,7 @@ async def agent_reply(
 
     tool_context: dict[str, Any] = {}
     tool_calls: list[dict[str, Any]] = []
-    retrieval_context = [] if use_dify else search_knowledge(payload.user_message, limit=2)
+    retrieval_context = [] if use_dify else rag_service.search(payload.user_message, limit=2).results
     content = "我已经收到你的问题，会继续为你处理。"
     handoff_required = False
     handoff_reason = ""

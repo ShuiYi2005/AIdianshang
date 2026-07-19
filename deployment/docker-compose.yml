@@ -11,6 +11,7 @@ volumes:
   weaviate_data:
   n8n_data:
   training_assets:
+  embedding_model_cache:
 
 services:
 
@@ -210,6 +211,8 @@ services:
         condition: service_healthy
       dify-api:
         condition: service_started
+      weaviate:
+        condition: service_started
     environment:
       SERVER_KEY: ${PLUGIN_SERVER_KEY}
       DIFY_INNER_API_URL: http://dify-api:5001
@@ -279,9 +282,15 @@ services:
       DIFY_APP_API_URL: ${DIFY_APP_API_URL:-http://dify-api:5001/v1/chat-messages}
       DIFY_APP_API_KEY: ${DIFY_APP_API_KEY:-}
       DIFY_APP_TIMEOUT_SECONDS: ${DIFY_APP_TIMEOUT_SECONDS:-15}
+      RAG_MODE: ${RAG_MODE:-hybrid}
+      RAG_EMBEDDING_MODEL: ${RAG_EMBEDDING_MODEL:-BAAI/bge-small-zh-v1.5}
+      RAG_MODEL_CACHE_PATH: ${RAG_MODEL_CACHE_PATH:-/models}
+      WEAVIATE_URL: ${WEAVIATE_URL:-http://weaviate:8080}
+      RAG_AUTO_INDEX: ${RAG_AUTO_INDEX:-true}
     volumes:
       - ../knowledge:/app/knowledge:ro
       - training_assets:/app/training-assets
+      - embedding_model_cache:/models
     ports:
       - "8010:8010"
     healthcheck:

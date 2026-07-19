@@ -122,7 +122,23 @@ class RagService:
             reason = str(exc) or "vector_unavailable"
             return RagSearchResponse(self.keyword_search(query, limit), "keyword_fallback", reason, "degraded")
 
+    def start_reindex(self) -> dict[str, object]:
+        if self._running_job_id:
+            return {"sync_job_id": self._running_job_id, "status": "running", "accepted": False}
+        self._running_job_id = "starting"
+
+        def run() -> None:
+            try:
+                self.reindex()
+            finally:
+                if self._running_job_id == "starting":
+                    self._running_job_id = None
+
+        threading.Thread(target=run, daemon=True, name="rag-reindex").start()
+        return {"sync_job_id": "starting", "status": "running", "accepted": True}
+
     def status(self) -> dict[str, object]:
         counts = self.repository.counts()
         latest = self.repository.latest_sync_status()
-        return {"mode": self.settings.mode, "model_name": self.settings.model_name, "model_cache_status": "ready" if self.settings.cache_path else "missing", "weaviate_status": "ready", "index_status": "running" if self._running_job_id else (latest or {}).get("status", "idle"), "last_sync": latest, **counts}
+        cache_path = Path(self.settings.cache_path)
+        return {"mode": self.settings.mode, "model_name": self.settings.model_name, "model_cache_status": "ready" if cache_path.exists() and any(cache_path.iterdir()) else "missing", "weaviate_status": "unknown", "index_status": "running" if self._running_job_id else (latest or {}).get("status", "idle"), "last_sync": latest, **counts}

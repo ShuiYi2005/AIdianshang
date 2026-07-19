@@ -77,3 +77,12 @@ docker compose -f deployment/docker-compose.yml up -d
 powershell -ExecutionPolicy Bypass -File scripts/check-env.ps1 -EnvFile deployment/env/local.env
 powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 ```
+# 本地向量 RAG
+
+默认 `RAG_MODE=hybrid` 使用 `BAAI/bge-small-zh-v1.5` 的 ONNX CPU 嵌入模型；首次同步会下载约 90 MB 模型文件到 Docker 卷 `embedding_model_cache`，后续重启复用缓存。可通过 `GET /api/rag/status` 查看缓存与索引状态，通过 `POST /api/rag/reindex` 同步 `knowledge/` 下的文本资料。
+
+- `RAG_MODE=hybrid`：优先向量检索，依赖不可用时返回明确的 `keyword_fallback`。
+- `RAG_MODE=vector`：只接受向量检索，依赖故障返回受控错误。
+- `RAG_MODE=keyword`：不加载模型，仅用于离线降级验证。
+
+该模型是嵌入模型，不是聊天大模型；它负责语义召回，不能替代 Dify/其他聊天模型生成回复。
