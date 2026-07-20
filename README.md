@@ -51,9 +51,13 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1 -EnvFile deployment/
 
 `http://localhost:4173` 提供客服工作台与 AI 训练中心。当前未接入真实电商后台：人工回复会明确标记为“模拟渠道已发送”，但会真实写入会话、工单与审计；训练主题可上传受限素材、预览、发布不可变版本并回滚。退款、赔偿、投诉、身份核验等高风险请求始终转人工。
 
+本地 RAG 使用 `BAAI/bge-small-zh-v1.5` 与 Weaviate；通过训练中心的“立即同步”将 `knowledge/` 中的文本资料建立向量索引。默认未启用 Dify App 调用，也未配置模型供应商。完整能力边界、已知限制与验收范围见 [当前项目状态](docs/CURRENT_STATUS.md)。
+
 ## 产品化验证
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tests/services/verify_agent_service.ps1 -EnvFile deployment/env/local.env
 powershell -ExecutionPolicy Bypass -File tests/evaluation/verify_evaluation_runner.ps1
 ```
+
+`docs/superpowers/` 是历史设计和实施计划，`releases/` 是历史发布快照；二者都不替代当前 `main` 的代码与 [当前项目状态](docs/CURRENT_STATUS.md)。

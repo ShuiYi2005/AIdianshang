@@ -23,8 +23,11 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1 -EnvFile deployment/
 - 业务库 schema 校验。
 - 配置、Prompt、知识资产校验。
 - `db-simulator` 读取 `business-db` 的集成测试。
-- Dify Web/API、n8n、db-simulator HTTP 检查。
+- Dify Web/API、n8n、db-simulator、agent-service 与运营台 HTTP 检查。
 - Dify worker Redis broker 检查。
+- n8n webhook、训练中心、RAG、可观测性、评测与固定壳层 UI 合同检查。
+
+该脚本验证的是本地 Docker 闭环；它不表示 Dify Chatflow 已发布、模型供应商已配置、真实电商后台已接入，或生产环境已验证。当前限制见 [CURRENT_STATUS.md](CURRENT_STATUS.md)。
 
 ## 受限网络构建
 

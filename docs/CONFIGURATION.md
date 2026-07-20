@@ -86,3 +86,13 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 - `RAG_MODE=keyword`：不加载模型，仅用于离线降级验证。
 
 该模型是嵌入模型，不是聊天大模型；它负责语义召回，不能替代 Dify/其他聊天模型生成回复。
+
+### 当前运行限制
+
+- `RAG_AUTO_INDEX` 已被 Compose 注入，但当前 `agent-service` 没有启动钩子调用它；首次或内容变更后需从训练中心点击“立即同步”，或调用 `POST /api/rag/reindex`。
+- `GET /api/rag/status` 目前可返回模型缓存、文档数、切片数和最近同步任务，但 `weaviate_status` 仍固定为 `unknown`，不能作为连通性健康结论。
+- `POST /api/rag/reindex` 当前没有真实认证边界，只适用于本机受信任演示环境；不要将 `8010` 端口直接暴露到不受信任网络。
+
+## Dify 应用与模型提供商
+
+本地默认 `DIFY_APP_ENABLED=false`。仓库保存 Chatflow 说明、提示词和工具契约，但不保存已发布的 Dify App、模型供应商凭据或 `DIFY_APP_API_KEY`。只有在目标环境完成模型供应商配置、发布 App 并通过环境变量注入 App Key 后，`agent-service` 才会调用 Dify；否则使用本地策略、训练主题、RAG 与转人工降级链路。

@@ -4,7 +4,11 @@
 
 项目当前是 AI 客服技术 MVP，已经具备本地可运行的 Dify、n8n、业务库、Redis、Weaviate、模拟 Tool 服务。下一阶段目标是演进为标准的 AI 客服平台架构。
 
-## 目标架构
+## 当前运行链路
+
+当前本地链路是：React 运营台或 n8n webhook 调用 `agent-service`；服务先使用本地策略、训练主题、订单模拟 Tool、RAG 和审计。仅当目标环境显式配置并启用 Dify App 时，才会将普通问答转交给已发布的 Dify Chatflow。真实电商渠道、API 网关与 Adapter 尚未接入。
+
+## 目标架构（并非全部已实现）
 
 ```mermaid
 flowchart TD
@@ -50,6 +54,8 @@ flowchart TD
 - Tool 服务提供 AI 可调用的受控能力。
 - Adapter 层负责平台差异，不让平台字段污染核心业务模型。
 - API 管理层统一鉴权、限流、幂等、日志、版本和错误码。
+
+当前实现状态和已知 RAG 限制以 [当前项目状态](CURRENT_STATUS.md) 为准；本页中的 API Gateway、CRM/电商 Adapter 和外部渠道节点是目标架构，不应表述为已上线能力。
 # 轻量向量检索实现
 
 `agent-service` 使用 FastEmbed ONNX 将 `knowledge/` 的 `.md`/`.txt` 切片编码为 512 维向量；Business PostgreSQL 保存文档、版本、切片与同步任务，Weaviate 保存向量。订单、物流、支付、库存等实时事实不进入向量库，仍由 Tool 查询。

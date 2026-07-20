@@ -14,7 +14,7 @@
 
 ## 密钥管理
 
-密钥不再直接写在 `deployment/docker-compose.yml` 中，改由 `deployment/.env` 注入。
+密钥不直接写在 `deployment/docker-compose.yml` 中。本地默认由被 Git 忽略的 `deployment/env/local.env` 注入；`scripts/bootstrap-local.ps1` 可从受版本控制的模板生成该文件。部署环境应使用 Secret Manager、Docker/Kubernetes Secret 或 CI/CD Secret。
 
 `.env` 只适合本地开发和 Demo，不应提交到代码仓库。正式环境应使用云密钥管理、Docker/Kubernetes Secret、CI/CD Secret 或企业密码库。
 
