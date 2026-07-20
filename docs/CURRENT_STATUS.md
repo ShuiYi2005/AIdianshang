@@ -6,16 +6,14 @@
 
 - Docker Compose 启动 Dify、n8n、Business PostgreSQL、Redis、Weaviate、`db-simulator`、`agent-service` 和 React 客服运营台。
 - 运营台提供模拟渠道的人工接管、人工回复、工单、训练主题、素材、预览、发布和回滚。
-- 本地 RAG 使用 `BAAI/bge-small-zh-v1.5` 生成 512 维向量；`knowledge/` 内的 `.md` / `.txt` 可由 `POST /api/rag/reindex` 手动同步到 Business PostgreSQL 与 Weaviate。
+- 本地 RAG 使用 `BAAI/bge-small-zh-v1.5` 生成 512 维向量；`RAG_AUTO_INDEX=true` 时会在服务启动后异步同步 `knowledge/` 内的 `.md` / `.txt` 到 Business PostgreSQL 与 Weaviate，训练中心或 `POST /api/rag/reindex` 可手动触发增量同步。
 - 默认 `DIFY_APP_ENABLED=false`。未发布 Dify Chatflow、未配置模型供应商或 App Key 时，`agent-service` 走本地策略、训练主题、RAG 与转人工降级链路。
 - 真实电商后台尚未接入；订单查询和人工发送均为可审计的模拟渠道闭环。
 
 ## 当前限制（代码现状）
 
-- `RAG_AUTO_INDEX` 已进入环境配置，但当前服务启动时不会自动发起索引；需要在训练中心点击“立即同步”或调用重建接口。
-- `/api/rag/status` 当前固定返回 `weaviate_status=unknown`，尚未实际探测 Weaviate 连通性。
 - `/api/rag/reindex` 尚未接入真实身份认证或运营权限校验；本地演示环境不应将 `agent-service:8010` 暴露给不受信任网络。
-- RAG 同步的并发锁、风险/订单查询与 RAG 的执行顺序是已识别但尚未修复的工程缺口；在修复合并前，不应将该实现表述为生产级权限与索引调度。
+- 启动自动索引依赖 Weaviate Docker 健康检查；若索引运行后依赖短暂不可用，任务会记录失败状态，训练中心仍可手动重试。
 
 ## 运行与验证
 

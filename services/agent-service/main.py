@@ -7,6 +7,7 @@ import os
 import re
 import time
 import uuid
+from contextlib import asynccontextmanager
 from typing import Any
 
 import httpx
@@ -50,7 +51,14 @@ rag_service = RagService(
     RagRepository(),
 )
 
-app = FastAPI(title="agent-service", version="0.2.0")
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    if rag_settings.auto_index:
+        rag_service.start_reindex()
+    yield
+
+
+app = FastAPI(title="agent-service", version="0.2.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:4173"],
@@ -231,7 +239,7 @@ async def agent_reply(
 
     tool_context: dict[str, Any] = {}
     tool_calls: list[dict[str, Any]] = []
-    retrieval_context = [] if use_dify else rag_service.search(payload.user_message, limit=2).results
+    retrieval_context: list[dict[str, Any]] = []
     content = "我已经收到你的问题，会继续为你处理。"
     handoff_required = False
     handoff_reason = ""
@@ -339,6 +347,7 @@ async def agent_reply(
             "delivery": "local_training_match",
         }
     else:
+        retrieval_context = rag_service.search(payload.user_message, limit=2).results
         if retrieval_context:
             top = retrieval_context[0]
             content = f"我查到一条相关知识：{top.get('excerpt')} 来源：{top.get('source_uri')}。"

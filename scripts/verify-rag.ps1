@@ -23,6 +23,9 @@ $status = Invoke-RestMethod -Uri "http://localhost:8010/api/rag/status" -Method 
 if (!$status.mode) {
     throw "rag status did not return a retrieval mode"
 }
+if ($status.weaviate_status -ne "ready") {
+    throw "weaviate readiness probe did not return ready: $($status.weaviate_status)"
+}
 
 Invoke-RestMethod -Uri "http://localhost:8010/api/rag/reindex" -Method Post -TimeoutSec 20 | Out-Null
 $deadline = (Get-Date).AddSeconds(180)

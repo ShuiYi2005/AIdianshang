@@ -77,6 +77,11 @@ services:
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
       PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
       DEFAULT_VECTORIZER_MODULE: "none"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/v1/.well-known/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   dify-api:
     image: langgenius/dify-api:1.14.2
@@ -272,6 +277,8 @@ services:
       business-db:
         condition: service_healthy
       db-simulator:
+        condition: service_healthy
+      weaviate:
         condition: service_healthy
       dify-api:
         condition: service_started

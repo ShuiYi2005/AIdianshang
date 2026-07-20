@@ -60,9 +60,10 @@ class RagService:
     def reindex(self) -> RagIndexStatus:
         if not self._lock.acquire(blocking=False):
             return RagIndexStatus("running", self._running_job_id or "unknown", 0, 0)
-        job_id = self.repository.start_sync_job()
-        self._running_job_id = job_id
+        job_id: str | None = None
         try:
+            job_id = self.repository.start_sync_job()
+            self._running_job_id = job_id
             self.store.ensure_schema()
             indexed: list[IndexedChunk] = []
             expired_ids: set[str] = set()
@@ -99,7 +100,8 @@ class RagService:
             self.repository.complete_sync_job(job_id, result)
             return RagIndexStatus("succeeded", job_id, documents, len(indexed))
         except Exception as exc:
-            self.repository.fail_sync_job(job_id, str(exc))
+            if job_id is not None:
+                self.repository.fail_sync_job(job_id, str(exc))
             raise
         finally:
             self._running_job_id = None
@@ -141,4 +143,8 @@ class RagService:
         counts = self.repository.counts()
         latest = self.repository.latest_sync_status()
         cache_path = Path(self.settings.cache_path)
-        return {"mode": self.settings.mode, "model_name": self.settings.model_name, "model_cache_status": "ready" if cache_path.exists() and any(cache_path.iterdir()) else "missing", "weaviate_status": "unknown", "index_status": "running" if self._running_job_id else (latest or {}).get("status", "idle"), "last_sync": latest, **counts}
+        try:
+            weaviate_status = self.store.health()
+        except Exception:
+            weaviate_status = "unavailable"
+        return {"mode": self.settings.mode, "model_name": self.settings.model_name, "model_cache_status": "ready" if cache_path.exists() and any(cache_path.iterdir()) else "missing", "weaviate_status": weaviate_status, "index_status": "running" if self._running_job_id else (latest or {}).get("status", "idle"), "last_sync": latest, **counts}

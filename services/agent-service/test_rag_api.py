@@ -31,6 +31,13 @@ class RagApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 202)
         self.assertEqual(response.json()["sync_job_id"], "job-1")
 
+    def test_lifespan_starts_reindex_when_auto_index_is_enabled(self) -> None:
+        with patch.object(rag_service, "start_reindex", return_value={"sync_job_id": "job-1", "status": "running", "accepted": True}) as start_reindex:
+            with TestClient(app):
+                pass
+
+        start_reindex.assert_called_once_with()
+
     def test_search_reports_keyword_fallback(self) -> None:
         result = {
             "results": [],

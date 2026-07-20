@@ -4,6 +4,8 @@ from pathlib import Path
 
 from rag_service import RagDependencyError, RagService
 from rag_types import RagSettings
+from rag_vector import WeaviateKnowledgeStore
+import httpx
 
 
 class FakeEmbedder:
@@ -47,6 +49,9 @@ class FakeStore:
     def delete_document_versions(self, version_ids: set[str]) -> None:
         return None
 
+    def health(self) -> str:
+        return "ready"
+
 
 class FakeRepository:
     def start_sync_job(self) -> str:
@@ -69,6 +74,17 @@ class FakeRepository:
 
     def counts(self) -> dict[str, int]:
         return {"document_count": 0, "chunk_count": 0}
+
+
+class FlakyStartRepository(FakeRepository):
+    def __init__(self) -> None:
+        self.fail_next_start = True
+
+    def start_sync_job(self) -> str:
+        if self.fail_next_start:
+            self.fail_next_start = False
+            raise RuntimeError("database_unavailable")
+        return super().start_sync_job()
 
 
 def keyword_search(query: str, limit: int) -> list[dict[str, object]]:
@@ -114,6 +130,25 @@ class RagVectorTests(unittest.TestCase):
 
         with self.assertRaises(RagDependencyError):
             service.search("坏了可以退吗", 3)
+
+    def test_reindex_releases_lock_when_creating_sync_job_fails(self) -> None:
+        service = RagService(RagSettings(mode="vector"), FakeEmbedder(), FakeStore(), FlakyStartRepository())
+
+        with self.assertRaisesRegex(RuntimeError, "database_unavailable"):
+            service.reindex()
+
+        self.assertEqual(service.reindex().status, "succeeded")
+
+    def test_status_reports_actual_store_health(self) -> None:
+        service = RagService(RagSettings(mode="vector"), FakeEmbedder(), FakeStore(), FakeRepository())
+
+        self.assertEqual(service.status()["weaviate_status"], "ready")
+
+    def test_weaviate_health_returns_unavailable_when_probe_fails(self) -> None:
+        store = WeaviateKnowledgeStore("http://weaviate:8080")
+        store._client = httpx.Client(transport=httpx.MockTransport(lambda _: (_ for _ in ()).throw(httpx.ConnectError("down"))))
+
+        self.assertEqual(store.health(), "unavailable")
 
 
 if __name__ == "__main__":

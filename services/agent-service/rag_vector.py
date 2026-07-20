@@ -95,6 +95,13 @@ class WeaviateKnowledgeStore:
         )
         response.raise_for_status()
 
+    def health(self) -> str:
+        try:
+            response = self._client.get(f"{self._base_url}/v1/.well-known/ready")
+            return "ready" if response.status_code == 200 else "unavailable"
+        except httpx.HTTPError:
+            return "unavailable"
+
     def upsert_chunks(self, chunks: list[VectorChunk]) -> None:
         validate_vector_dimensions([chunk.vector for chunk in chunks])
         if not chunks:
