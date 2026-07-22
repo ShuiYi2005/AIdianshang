@@ -15,6 +15,8 @@
 - 本地 RAG 基于 `BAAI/bge-small-zh-v1.5` 与 Weaviate；订单与物流等实时事实不进入向量库。
 - 风险请求优先转人工，订单查询优先走 Tool；两类请求不会执行无用 RAG 检索。
 
+![AI 客服工作台界面](docs/images/support-console-overview.jpg)
+
 ## 3 分钟演示
 
 启动后访问 `http://localhost:4173`。完整面试演示步骤、可复制命令和预期现象见 [HR 演示指南](docs/HR_DEMO_GUIDE.md)。
