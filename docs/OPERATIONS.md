@@ -53,11 +53,11 @@ DB_SIMULATOR_BASE_IMAGE=python:3.12-slim
 
 当前回滚点：
 
-- Compose 升级前备份在 `backups/`。
-- Dify 数据库升级前备份在 `backups/`。
+- 当前仓库不保留本机 `backups/` 目录；代码与文档回滚使用 Git 提交。
+- 需要回滚数据库时，应在变更前执行 `scripts/backup-release-data.ps1`，并把备份保存在受保护的仓库外位置。
 - `deployment/docker-compose-old.yml` 保留旧版 Dify 参考配置。
 - `ai20-db-simulator-base:latest` 可作为本地模拟服务回滚基础镜像。
-- 当前目录不是 Git 仓库时，回滚主要依赖上述备份文件、镜像标签和 Docker volume 备份。
+- 当前项目是 Git 仓库；Docker volume 回滚仍需在变更前另行备份。
 
 回滚原则：
 

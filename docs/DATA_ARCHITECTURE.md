@@ -6,7 +6,7 @@
 
 - Dify PostgreSQL：Dify 平台自身数据，Compose 服务名 `db`。
 - Business PostgreSQL：业务主库，Compose 服务名 `business-db`，本机端口 `5433`。
-- Weaviate：Dify 知识库向量数据。
+- Weaviate：Dify 平台可使用的向量数据，以及 `agent-service` 本地 RAG 的 `KnowledgeChunk` 向量；后者由 FastEmbed 写入并由 Business PostgreSQL 保存版本、切片与同步任务元数据。
 - Redis：缓存、短期状态、限流状态和 Celery broker。
 - `dify/storage`：Dify 文件与运行存储。
 - `services/db-simulator/mock_data.py`：Demo 兼容兜底数据。

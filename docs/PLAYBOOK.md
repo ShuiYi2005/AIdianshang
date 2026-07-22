@@ -3,22 +3,19 @@
 ## 启动
 
 ```powershell
-docker compose -f deployment/docker-compose.yml up -d
+powershell -ExecutionPolicy Bypass -File scripts/start-local.ps1
 ```
 
 ## 查看状态
 
 ```powershell
-docker compose -f deployment/docker-compose.yml ps
+docker compose --env-file deployment/env/local.env -f deployment/docker-compose.yml ps
 ```
 
 ## 验证
 
 ```powershell
-Invoke-RestMethod http://localhost:8001/health
-Invoke-WebRequest http://localhost:8080 -UseBasicParsing
-Invoke-WebRequest http://localhost:5001/console/api/setup -UseBasicParsing
-Invoke-WebRequest http://localhost:5678 -UseBasicParsing
+powershell -ExecutionPolicy Bypass -File scripts/verify.ps1 -EnvFile deployment/env/local.env
 ```
 
 ## 修改服务
